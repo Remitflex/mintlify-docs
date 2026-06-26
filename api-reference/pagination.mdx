@@ -1,0 +1,135 @@
+---
+title: "Cursor-Based Pagination for RemitFlex List Endpoints"
+sidebarTitle: "Pagination"
+description: "Understand how RemitFlex paginates list responses using cursors, iterate through large result sets, and apply filters and sort order to your queries."
+---
+
+All RemitFlex list endpoints return results in pages rather than all at once. RemitFlex uses **cursor-based pagination** — each response includes an opaque cursor string that points to the next page of results. This approach is more reliable than offset-based pagination for live datasets because it remains consistent even when new records are inserted between requests. This page explains how to read pagination metadata, move through pages, and combine pagination with filters.
+
+## Why Cursor-Based Pagination
+
+Offset-based pagination (e.g. `?page=2`) shifts when records are created or deleted between requests, causing you to skip or repeat items. Cursors are anchored to a specific position in the dataset, so iterating through pages of payments or transactions always produces a complete and consistent result set.
+
+## Query Parameters
+
+Every list endpoint accepts the following pagination parameters as query string arguments:
+
+<ParamField query="limit" type="integer" default="20">
+  The number of results to return per page. Must be between `1` and `100` inclusive. Defaults to `20`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  An opaque cursor string returned in the previous response's `pagination.cursor` field. Omit this parameter to fetch the first page. Pass it on subsequent requests to retrieve the next page.
+</ParamField>
+
+<ParamField query="order" type="string" default="desc">
+  The sort order for results. Accepts `asc` (oldest first) or `desc` (newest first). Defaults to `desc`.
+</ParamField>
+
+## Response Format
+
+Every list response wraps your results in a top-level object with two fields: `data` containing the array of resource objects, and `pagination` containing the metadata you need to continue iterating.
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "cursor": "cur_01HX...",
+    "has_more": true,
+    "total": 142
+  }
+}
+```
+
+The response has the following top-level fields:
+
+<ResponseField name="data" type="array">
+  An array of resource objects for the current page. Each element is a full resource representation (for example, a payment object). The array is empty when there are no results matching your query.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Metadata describing the current page and how to fetch the next one.
+
+  <Expandable title="pagination fields">
+    <ResponseField name="cursor" type="string">
+      An opaque string identifying the position of the last item on the current page. Pass this value as the `cursor` query parameter to retrieve the next page. This field is `null` when there are no further pages.
+    </ResponseField>
+
+    <ResponseField name="has_more" type="boolean">
+      `true` if there are additional pages of results beyond the current one. `false` when you have reached the last page — at that point you can stop iterating.
+    </ResponseField>
+
+    <ResponseField name="total" type="integer">
+      The total number of records matching your query across all pages. This count reflects any filters you applied (e.g. `status`, `created_after`) and does not change as you page through results.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  Treat cursors as opaque strings. Do not parse, store long-term, or construct cursor values manually — their internal format may change without notice. They are only valid for 24 hours after being issued.
+</Note>
+
+## Iterating Through All Pages
+
+When you need to retrieve the complete result set (for example, to export all payments or reconcile transactions), loop until `pagination.has_more` is `false`.
+
+```javascript
+async function getAllPayments() {
+  const payments = [];
+  let cursor = null;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = new URL('https://api.remitflex.com/v1/payments');
+    url.searchParams.set('limit', '100');
+    if (cursor) url.searchParams.set('cursor', cursor);
+
+    const response = await fetch(url, {
+      headers: { 'Authorization': 'Bearer rf_live_xxxx' }
+    });
+    const { data, pagination } = await response.json();
+
+    payments.push(...data);
+    cursor = pagination.cursor;
+    hasMore = pagination.has_more;
+  }
+
+  return payments;
+}
+```
+
+<Tip>
+  Set `limit=100` when fetching all pages to minimize the number of round trips. Each request still counts toward your rate limit, so fetching in large pages keeps you well within the 100 requests-per-minute default.
+</Tip>
+
+## Fetching a Single Page
+
+If you only need the first page — for example, to display the ten most recent payments in a dashboard widget — omit the `cursor` parameter and set your desired `limit`:
+
+```bash
+curl "https://api.remitflex.com/v1/payments?limit=10&order=desc" \
+  -H "Authorization: Bearer rf_live_xxxx"
+```
+
+## Filtering and Sorting
+
+Most list endpoints support additional query parameters that narrow results before pagination is applied. The `total` in the response reflects the filtered count, and cursor iteration stays within the filtered result set.
+
+Common filter parameters available on list endpoints:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `created_after` | ISO 8601 timestamp | Return only records created after this time |
+| `created_before` | ISO 8601 timestamp | Return only records created before this time |
+| `status` | string | Return only records with the specified status (e.g. `completed`, `pending`) |
+
+**Example — fetch the last 50 completed payments in a date range:**
+
+```bash
+curl "https://api.remitflex.com/v1/payments?limit=50&status=completed&created_after=2024-01-01T00:00:00Z&created_before=2024-02-01T00:00:00Z" \
+  -H "Authorization: Bearer rf_live_xxxx"
+```
+
+<Warning>
+  Do not mix cursors from different queries. If you change filter parameters (e.g. `status` or `created_after`) mid-iteration, start from the first page without a `cursor` — using a cursor from a previous query will produce unpredictable results.
+</Warning>

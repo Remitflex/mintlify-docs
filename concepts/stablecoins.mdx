@@ -1,0 +1,120 @@
+---
+title: "Stablecoins: RemitFlex's Cross-Border Currency Engine"
+sidebarTitle: "Stablecoins"
+description: "Learn how RemitFlex uses stablecoins to power fast, low-cost cross-border payments — and how blockchain complexity is abstracted from your integration."
+---
+
+Stablecoins are digital currencies whose value is pegged to a stable reference asset — most commonly the US dollar — giving you the programmability and speed of blockchain rails without the price volatility associated with cryptocurrencies like Bitcoin or Ether. RemitFlex uses stablecoins as its internal settlement layer, routing your payments across borders in seconds while you interact exclusively with a straightforward REST API.
+
+## Why Stablecoins for Cross-Border Payments
+
+Traditional international wire transfers rely on a chain of correspondent banks, each introducing fees, delays, and operating-hours constraints. Stablecoins eliminate most of this friction. When you initiate a cross-border payment through RemitFlex, the value moves on-chain — settling on a blockchain ledger rather than traversing the SWIFT network.
+
+The practical benefits for your business are significant:
+
+- **Speed** — On-chain settlement completes in seconds to minutes, compared to 1–5 business days for traditional wires.
+- **Cost** — Blockchain transaction fees are a fraction of correspondent banking charges. RemitFlex passes these savings directly to you.
+- **24/7 availability** — Blockchains don't observe weekends or bank holidays. Your payments can move any time, any day.
+- **Transparency** — Every transaction has an immutable on-chain record you can verify independently.
+- **No correspondent delays** — Value moves peer-to-peer on the ledger, removing the need for intermediary banks to batch, reconcile, and forward funds.
+
+## Supported Stablecoins
+
+RemitFlex supports four stablecoins across its payment corridors. Each has different issuers, network availability, and use cases — the right choice depends on your target corridor and recipient requirements.
+
+<Tabs>
+  <Tab title="USDC">
+    **USD Coin (USDC)** is a fully reserved, USD-pegged stablecoin issued by Circle and governed under the Centre Consortium standards. It is the primary stablecoin in the RemitFlex ecosystem.
+
+    | Property | Details |
+    |---|---|
+    | Peg | 1:1 USD |
+    | Issuer | Circle Internet Financial |
+    | Token Standard | ERC-20 (Ethereum), also available on Solana, Base, Avalanche |
+    | Reserves | 100% cash and short-duration US Treasuries, attested monthly |
+    | Best For | Most RemitFlex corridors; default for USD-source payments |
+
+    <Tip>
+      USDC is the recommended stablecoin for new integrations. It has the broadest corridor coverage and the most straightforward regulatory standing.
+    </Tip>
+  </Tab>
+
+  <Tab title="USDT">
+    **Tether (USDT)** is the largest stablecoin by market capitalisation and is widely accepted across exchanges and payment networks globally.
+
+    | Property | Details |
+    |---|---|
+    | Peg | 1:1 USD |
+    | Issuer | Tether Operations Limited |
+    | Token Standard | ERC-20, TRC-20 (Tron), and others |
+    | Reserves | Mix of cash, commercial paper, and other assets |
+    | Best For | Corridors to regions with high USDT liquidity (e.g., Southeast Asia, Africa) |
+
+    <Info>
+      RemitFlex uses USDT on corridors where local liquidity providers have deeper USDT pools, which can result in tighter FX spreads for your payments.
+    </Info>
+  </Tab>
+
+  <Tab title="PYUSD">
+    **PayPal USD (PYUSD)** is a USD-pegged stablecoin issued by Paxos Trust Company and branded by PayPal, bringing institutional-grade backing and broad consumer recognition.
+
+    | Property | Details |
+    |---|---|
+    | Peg | 1:1 USD |
+    | Issuer | Paxos Trust Company (on behalf of PayPal) |
+    | Token Standard | ERC-20 (Ethereum) |
+    | Reserves | US dollar deposits and short-term US Treasuries |
+    | Best For | Payments involving PayPal ecosystem partners or US-domestic contexts |
+
+    <Note>
+      PYUSD corridor availability is expanding. Check the `/corridors` endpoint or your dashboard for the latest supported routes.
+    </Note>
+  </Tab>
+
+  <Tab title="EURC">
+    **EURC** is a Euro-pegged stablecoin issued by Circle, designed to serve payments denominated in EUR without requiring FX conversion from USD.
+
+    | Property | Details |
+    |---|---|
+    | Peg | 1:1 EUR |
+    | Issuer | Circle Internet Financial |
+    | Token Standard | ERC-20 (Ethereum), Base |
+    | Reserves | 100% Euro-denominated cash, attested regularly |
+    | Best For | EU-source or EU-destination payments; US → EU and EU → UK corridors |
+
+    <Tip>
+      If your business operates primarily in Europe or sends payments to European recipients, using EURC as your settlement currency can eliminate a USD/EUR conversion step and reduce FX costs.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## How RemitFlex Abstracts Blockchain Complexity
+
+You never need to manage wallets, gas fees, private keys, or blockchain nodes to use RemitFlex. The platform handles all on-chain operations internally. From your perspective, sending a cross-border payment looks exactly like calling a REST API endpoint — because that's all you need to do.
+
+Here's what RemitFlex manages on your behalf:
+
+<CardGroup cols={2}>
+  <Card title="Wallet Infrastructure" icon="wallet">
+    RemitFlex maintains a network of custodial wallets and liquidity pools across supported chains. You interact with logical payment objects, not raw blockchain addresses.
+  </Card>
+  <Card title="Gas Fee Optimisation" icon="gauge">
+    On-chain transaction fees (gas) are calculated and paid automatically. Your pricing is based on RemitFlex's flat or corridor-based fee schedule, not fluctuating gas markets.
+  </Card>
+  <Card title="Chain Selection" icon="link">
+    RemitFlex routes transactions across the optimal blockchain network for each corridor — choosing between Ethereum, Solana, Base, or others based on speed, cost, and liquidity.
+  </Card>
+  <Card title="On-Chain Confirmation" icon="circle-check">
+    The platform monitors confirmation depth for each transaction and only marks a payment as `settled` once it meets the minimum block confirmations required for that network.
+  </Card>
+</CardGroup>
+
+## Settlement and Your Integration
+
+RemitFlex processes all on-chain settlement asynchronously in the background. When you create a payment via the API, you receive an immediate response with a payment object and a `pending` status. As the payment progresses through the stablecoin rails, RemitFlex emits webhook events to your configured endpoint so your system stays in sync without polling.
+
+<Info>
+  Your API integration never references blockchain transaction hashes, wallet addresses, or token contracts unless you explicitly request on-chain metadata for audit purposes. The `/payments/{id}` endpoint exposes an optional `onchain_details` field for that use case.
+</Info>
+
+The on-chain settlement layer is an implementation detail that RemitFlex manages — your integration concern is the payment lifecycle, not the blockchain mechanics underneath it.

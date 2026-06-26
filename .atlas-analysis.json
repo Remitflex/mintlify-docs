@@ -1,0 +1,118 @@
+{
+  "projectType": "saas",
+  "projectName": "RemitFlex",
+  "projectDescription": "Stablecoin payment orchestration platform that enables businesses to move money across borders — paying, converting, and off-ramping seamlessly with compliant infrastructure.",
+  "theme": "luma",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/stablecoins",
+              "concepts/payment-flows",
+              "concepts/corridors",
+              "concepts/compliance"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/send-payment",
+              "guides/currency-conversion",
+              "guides/off-ramp",
+              "guides/webhooks",
+              "guides/testing"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environments",
+              "configuration/supported-currencies",
+              "configuration/error-codes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/pagination"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api-reference/payments/create",
+              "api-reference/payments/get",
+              "api-reference/payments/list",
+              "api-reference/payments/cancel"
+            ]
+          },
+          {
+            "group": "Conversions",
+            "pages": [
+              "api-reference/conversions/quote",
+              "api-reference/conversions/execute"
+            ]
+          },
+          {
+            "group": "Off-Ramp",
+            "pages": [
+              "api-reference/offramp/initiate",
+              "api-reference/offramp/status"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/events",
+              "api-reference/webhooks/verify"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cross-border stablecoin payments",
+    "Real-time currency conversion and FX quotes",
+    "Fiat off-ramp to bank accounts",
+    "Multi-corridor support (global reach)",
+    "Compliance-ready KYC/AML infrastructure",
+    "Webhook-driven payment status notifications",
+    "Sandbox environment for testing",
+    "REST API with simple authentication"
+  ],
+  "publicApiSurface": [
+    "POST /payments — create a cross-border stablecoin payment",
+    "GET /payments/{id} — retrieve payment details",
+    "GET /payments — list payments with filters",
+    "DELETE /payments/{id} — cancel a pending payment",
+    "POST /conversions/quote — get a real-time FX quote",
+    "POST /conversions/execute — execute a currency conversion",
+    "POST /offramp — initiate a fiat off-ramp",
+    "GET /offramp/{id} — get off-ramp status",
+    "GET /webhooks/events — list webhook event types",
+    "POST /webhooks/verify — verify webhook signature"
+  ]
+}

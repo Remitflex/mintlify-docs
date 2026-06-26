@@ -1,0 +1,170 @@
+---
+title: "Supported Stablecoins and Fiat Currencies in RemitFlex"
+sidebarTitle: "Supported Currencies"
+description: "Browse every stablecoin and fiat currency RemitFlex supports for payments and off-ramp delivery, including networks, ISO codes, and the live API."
+---
+
+RemitFlex supports a curated set of stablecoins for on-chain movement and a growing list of fiat currencies for final delivery via bank transfer or mobile money. Knowing which currencies are available — and how to reference them correctly in API requests — is essential before you build any payment or conversion flow.
+
+<Tabs>
+  <Tab title="Stablecoins">
+    ## Supported Stablecoins
+
+    Stablecoins are the primary medium of transfer on the RemitFlex network. When you initiate a cross-border payment, funds travel as a stablecoin across one or more blockchain networks before being converted and delivered in the recipient's local currency.
+
+    | Symbol | Name | Networks | Peg |
+    |---|---|---|---|
+    | `USDC` | USD Coin | Ethereum, Polygon, Solana | USD |
+    | `USDT` | Tether | Ethereum, Tron, Polygon | USD |
+    | `EURC` | Euro Coin | Ethereum | EUR |
+    | `PYUSD` | PayPal USD | Ethereum, Solana | USD |
+
+    ### Network Selection
+
+    When you create a payment or conversion using a stablecoin, you can specify the preferred network in the `network` field of your request. If you omit it, RemitFlex automatically selects the most cost-efficient and fastest available network for your corridor at that moment.
+
+    ```json
+    {
+      "source_currency": "USDC",
+      "network": "polygon",
+      "amount": "500.00"
+    }
+    ```
+
+    <Tip>
+    Polygon and Solana typically offer lower on-chain fees and faster finality than Ethereum mainnet. For high-frequency or low-value payments, specifying one of these networks can meaningfully reduce your per-transaction cost.
+    </Tip>
+
+    ### How to Reference Stablecoins in the API
+
+    Use the token symbol in uppercase as the `currency` or `source_currency` / `destination_currency` value in all API requests. Do not use contract addresses — RemitFlex resolves the correct contract per network internally.
+
+    | API field value | Correct | Incorrect |
+    |---|---|---|
+    | USD Coin | `"USDC"` | `"usd-coin"`, `"0xa0b8..."` |
+    | Tether | `"USDT"` | `"usdt"`, `"tether"` |
+    | Euro Coin | `"EURC"` | `"EURc"`, `"eurc"` |
+    | PayPal USD | `"PYUSD"` | `"pyusd"`, `"PaypalUSD"` |
+
+    <Note>
+    RemitFlex does not support unbacked or algorithmic stablecoins. All supported tokens maintain a 1:1 peg with their reference currency through fully-reserved or audited backing mechanisms.
+    </Note>
+  </Tab>
+
+  <Tab title="Fiat Currencies">
+    ## Supported Fiat Currencies
+
+    Fiat currencies represent the final delivery leg of a payment — the currency your recipient receives in their bank account, mobile wallet, or cash pick-up point. RemitFlex supports the following fiat currencies for off-ramp delivery.
+
+    | Code | Currency | Regions |
+    |---|---|---|
+    | `USD` | US Dollar | United States |
+    | `EUR` | Euro | European Union |
+    | `GBP` | British Pound | United Kingdom |
+    | `MXN` | Mexican Peso | Mexico |
+    | `PHP` | Philippine Peso | Philippines |
+    | `NGN` | Nigerian Naira | Nigeria |
+    | `KES` | Kenyan Shilling | Kenya |
+    | `BRL` | Brazilian Real | Brazil |
+    | `INR` | Indian Rupee | India |
+    | `CAD` | Canadian Dollar | Canada |
+
+    ### How to Reference Fiat Currencies in the API
+
+    All fiat currencies use their **ISO 4217** three-letter code in uppercase. This applies to every API field that accepts a fiat currency — including `destination_currency`, `quote.fiat_currency`, and payout configuration.
+
+    ```json
+    {
+      "destination_currency": "PHP",
+      "recipient": {
+        "country": "PH",
+        "bank_code": "BDO",
+        "account_number": "1234567890"
+      }
+    }
+    ```
+
+    <Tip>
+    Not all delivery methods are available in every fiat corridor. For example, `NGN` supports bank transfer and mobile money, while `KES` supports bank transfer and M-Pesa. Query `GET /currencies/{code}/delivery-methods` to see what is available for a specific destination currency.
+    </Tip>
+
+    <Warning>
+    Fiat delivery to `INR` requires your business account to be verified under the Foreign Contribution Regulation Act (FCRA) exemption or a valid RBI-licensed partner agreement. Attempting INR payouts without the appropriate compliance status will return a `403 Forbidden` with code `COMPLIANCE_REQUIRED`.
+    </Warning>
+  </Tab>
+</Tabs>
+
+---
+
+## Currency Codes at a Glance
+
+To avoid ambiguity, here is a quick reference for how to format currency values in any RemitFlex API field:
+
+| Currency type | Format | Example |
+|---|---|---|
+| Fiat | ISO 4217 uppercase | `"USD"`, `"NGN"`, `"PHP"` |
+| Stablecoin | Token symbol uppercase | `"USDC"`, `"USDT"`, `"EURC"` |
+
+Mixing formats — for example, using `"usd"` in lowercase or `"us-dollar"` — will result in a `400 Bad Request` with error code `INVALID_CURRENCY`.
+
+---
+
+## Fetching Supported Currencies via API
+
+Because RemitFlex adds new currencies and corridors on a rolling basis, the authoritative list of what is currently available always comes from the API — not from static documentation. Use the `GET /currencies` endpoint to retrieve the full list at runtime.
+
+```bash
+curl https://api.remitflex.com/v1/currencies \
+  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+```
+
+**Example response (truncated):**
+
+```json
+{
+  "stablecoins": [
+    {
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "networks": ["ethereum", "polygon", "solana"],
+      "peg": "USD"
+    },
+    {
+      "symbol": "EURC",
+      "name": "Euro Coin",
+      "networks": ["ethereum"],
+      "peg": "EUR"
+    }
+  ],
+  "fiat": [
+    {
+      "code": "PHP",
+      "name": "Philippine Peso",
+      "regions": ["PH"],
+      "delivery_methods": ["bank_transfer", "mobile_money"]
+    },
+    {
+      "code": "NGN",
+      "name": "Nigerian Naira",
+      "regions": ["NG"],
+      "delivery_methods": ["bank_transfer", "mobile_money"]
+    }
+  ]
+}
+```
+
+You can also filter by type using the `type` query parameter:
+
+```bash
+# Only stablecoins
+curl https://api.remitflex.com/v1/currencies?type=stablecoin \
+  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+
+# Only fiat
+curl https://api.remitflex.com/v1/currencies?type=fiat \
+  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+```
+
+<Info>
+New corridors are enabled based on regional licensing, banking partner availability, and compliance approvals. If a currency or corridor you need is not yet listed, contact your account manager or submit a corridor request from the Dashboard under **Settings → Corridors → Request New Corridor**.
+</Info>

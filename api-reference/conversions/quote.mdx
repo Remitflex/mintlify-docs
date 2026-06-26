@@ -1,0 +1,175 @@
+---
+title: "POST /conversions/quote — Get a Conversion Rate Quote"
+sidebarTitle: "Get Quote"
+description: "Request a locked exchange rate quote between two currencies. The quote is valid for 30 seconds and can be passed to the execute endpoint to guarantee the rate."
+---
+
+The Get Quote endpoint returns a short-lived, locked exchange rate between a source and destination currency. You can use the returned `quote_id` when [creating a payment](/api-reference/payments/create) or [executing a conversion](/api-reference/conversions/execute) to guarantee that the displayed rate is the rate applied — protecting you from slippage during high-volatility periods. By default, the `amount` you provide is treated as the source currency amount, but you can set `amount_type` to `destination` if you need the recipient to receive a precise amount.
+
+<Warning>
+  Quotes expire **30 seconds** after creation. If you pass an expired `quote_id` to a downstream endpoint, you will receive a `QUOTE_EXPIRED` error and must request a new quote. Build your integration to account for this window and avoid pre-fetching quotes too early in your checkout or payment flow.
+</Warning>
+
+## Request
+
+<ParamField body="from_currency" type="string" required>
+  The source currency to convert from. Accepts supported stablecoin symbols (`USDC`, `USDT`, `EURC`, `PYUSD`) or fiat ISO 4217 codes.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  The target currency to convert into. Accepts supported stablecoin symbols or fiat ISO 4217 codes.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount to convert. Interpreted as a `from_currency` amount when `amount_type` is `source`, or as a `to_currency` amount when `amount_type` is `destination`.
+</ParamField>
+
+<ParamField body="amount_type" type="string">
+  Specifies which side of the conversion the `amount` refers to. Accepted values:
+
+  - `source` *(default)* — `amount` is denominated in `from_currency`.
+  - `destination` — `amount` is the exact amount the recipient should receive in `to_currency`. RemitFlex back-calculates the required source amount including fees.
+</ParamField>
+
+## Response
+
+<ResponseField name="quote_id" type="string">
+  Unique quote identifier with prefix `qt_`. Pass this to [POST /payments](/api-reference/payments/create) or [POST /conversions/execute](/api-reference/conversions/execute) to apply the locked rate.
+</ResponseField>
+
+<ResponseField name="from_currency" type="string">
+  The source currency used in the quote.
+</ResponseField>
+
+<ResponseField name="to_currency" type="string">
+  The target currency used in the quote.
+</ResponseField>
+
+<ResponseField name="amount" type="number">
+  The source amount the quote is based on, denominated in `from_currency`.
+</ResponseField>
+
+<ResponseField name="converted_amount" type="number">
+  The amount the recipient will receive in `to_currency` if this quote is executed, after fees are deducted.
+</ResponseField>
+
+<ResponseField name="exchange_rate" type="number">
+  The locked mid-market conversion rate from `from_currency` to `to_currency` at the time this quote was created.
+</ResponseField>
+
+<ResponseField name="fee" type="number">
+  The RemitFlex conversion fee, denominated in `fee_currency`.
+</ResponseField>
+
+<ResponseField name="fee_currency" type="string">
+  The currency in which the fee is denominated.
+</ResponseField>
+
+<ResponseField name="expires_at" type="string">
+  ISO 8601 timestamp indicating when this quote expires. Quotes are valid for 30 seconds from `created_at`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the quote was generated.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/conversions/quote \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_currency": "USDC",
+    "to_currency": "EUR",
+    "amount": 1000
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://api.remitflex.com/v1/conversions/quote",
+  {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer YOUR_API_KEY",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from_currency: "USDC",
+      to_currency: "EUR",
+      amount: 1000,
+    }),
+  }
+);
+
+const quote = await response.json();
+// Use quote.quote_id within 30 seconds
+console.log(`Rate: ${quote.exchange_rate}, Expires: ${quote.expires_at}`);
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```json Response
+{
+  "quote_id": "qt_01HX9M2PABCDEF",
+  "from_currency": "USDC",
+  "to_currency": "EUR",
+  "amount": 1000,
+  "converted_amount": 922.50,
+  "exchange_rate": 0.9225,
+  "fee": 2.50,
+  "fee_currency": "USDC",
+  "expires_at": "2024-01-15T10:30:30Z",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+</CodeGroup>
+
+### Quoting for a Destination Amount
+
+If you need the recipient to receive exactly 500 EUR, set `amount_type` to `destination`:
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/conversions/quote \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_currency": "USDC",
+    "to_currency": "EUR",
+    "amount": 500,
+    "amount_type": "destination"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://api.remitflex.com/v1/conversions/quote",
+  {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer YOUR_API_KEY",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from_currency: "USDC",
+      to_currency: "EUR",
+      amount: 500,
+      amount_type: "destination",
+    }),
+  }
+);
+
+const quote = await response.json();
+// quote.amount reflects the USDC you need to send
+console.log(`Send ${quote.amount} USDC to deliver exactly 500 EUR`);
+```
+
+</CodeGroup>

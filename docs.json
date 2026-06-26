@@ -1,0 +1,121 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "RemitFlex",
+  "colors": {
+    "primary": "#ef7025",
+    "light": "#eec9bc",
+    "dark": "#4fa1ab"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@remitflex.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.remitflex.com"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/stablecoins",
+              "concepts/payment-flows",
+              "concepts/corridors",
+              "concepts/compliance"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/send-payment",
+              "guides/currency-conversion",
+              "guides/off-ramp",
+              "guides/webhooks",
+              "guides/testing"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environments",
+              "configuration/supported-currencies",
+              "configuration/error-codes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/pagination"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api-reference/payments/create",
+              "api-reference/payments/get",
+              "api-reference/payments/list",
+              "api-reference/payments/cancel"
+            ]
+          },
+          {
+            "group": "Conversions",
+            "pages": [
+              "api-reference/conversions/quote",
+              "api-reference/conversions/execute"
+            ]
+          },
+          {
+            "group": "Off-Ramp",
+            "pages": [
+              "api-reference/offramp/initiate",
+              "api-reference/offramp/status"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/events",
+              "api-reference/webhooks/verify"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/remitflex",
+      "linkedin": "https://linkedin.com/company/remitflex"
+    }
+  }
+}

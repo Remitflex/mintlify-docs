@@ -1,0 +1,176 @@
+---
+title: "DELETE /payments/{id} — Cancel a Pending Payment"
+sidebarTitle: "Cancel Payment"
+description: "Cancel a payment that is still in pending status before processing begins. Returns the updated payment object with status set to cancelled."
+---
+
+The Cancel Payment endpoint allows you to cancel a payment that has not yet entered processing. Once a payment transitions out of `pending` status, it can no longer be cancelled — on-chain settlement will have already begun and the funds will be in transit. If you need to recover funds from a payment that has already begun processing, contact [RemitFlex Support](mailto:support@remitflex.com).
+
+<Warning>
+  Cancellations are only possible while the payment `status` is `pending`. Attempting to cancel a payment with any other status — including `processing`, `settled`, or `delivered` — will return a `422 Unprocessable Entity` error.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique payment identifier, prefixed with `pmt_` (e.g., `pmt_01HX4N3RABCDEF`). This is the `id` field returned when the payment was created.
+</ParamField>
+
+## Response
+
+On success, the API returns the full payment object with `status` updated to `"cancelled"` and `updated_at` reflecting the cancellation timestamp.
+
+<ResponseField name="id" type="string">
+  Unique payment identifier with prefix `pmt_`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Will be `"cancelled"` upon successful cancellation.
+</ResponseField>
+
+<ResponseField name="amount" type="number">
+  The source payment amount originally submitted.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Source stablecoin used for the payment.
+</ResponseField>
+
+<ResponseField name="destination_currency" type="string">
+  Target currency the recipient would have received.
+</ResponseField>
+
+<ResponseField name="converted_amount" type="number">
+  The originally calculated destination amount. For cancelled payments, no funds are delivered.
+</ResponseField>
+
+<ResponseField name="exchange_rate" type="number">
+  The exchange rate that was applied at the time of creation.
+</ResponseField>
+
+<ResponseField name="fee" type="number">
+  Fee denominated in `currency`. Fees are not charged for payments cancelled while in `pending` status.
+</ResponseField>
+
+<ResponseField name="recipient" type="object">
+  Recipient details associated with the payment.
+
+  <Expandable title="recipient fields">
+    <ResponseField name="name" type="string">
+      Full legal name of the recipient.
+    </ResponseField>
+
+    <ResponseField name="account_number" type="string">
+      Recipient's IBAN or local account number.
+    </ResponseField>
+
+    <ResponseField name="bank_country" type="string">
+      ISO 3166-1 alpha-2 country code of the recipient's bank.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="reference" type="string">
+  The internal reference you provided at creation, if any.
+</ResponseField>
+
+<ResponseField name="corridor" type="string">
+  The corridor identifier used to route the payment.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the payment was originally created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of the cancellation.
+</ResponseField>
+
+<ResponseField name="estimated_delivery" type="string">
+  ISO 8601 timestamp of the originally projected delivery time. For cancelled payments, delivery will not occur.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://api.remitflex.com/v1/payments/pmt_01HX4N3RABCDEF \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://api.remitflex.com/v1/payments/pmt_01HX4N3RABCDEF",
+  {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer YOUR_API_KEY",
+    },
+  }
+);
+
+const payment = await response.json();
+console.log(payment.status); // "cancelled"
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```json Response
+{
+  "id": "pmt_01HX4N3RABCDEF",
+  "status": "cancelled",
+  "amount": 500,
+  "currency": "USDC",
+  "destination_currency": "EUR",
+  "converted_amount": 461.25,
+  "exchange_rate": 0.9225,
+  "fee": 0,
+  "corridor": "US-EU",
+  "recipient": {
+    "name": "Maria Garcia",
+    "account_number": "ES9121000418401234567891",
+    "bank_country": "ES"
+  },
+  "reference": "Invoice #INV-2024-001",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:31:45Z",
+  "estimated_delivery": "2024-01-15T14:30:00Z"
+}
+```
+
+</CodeGroup>
+
+## Error Responses
+
+If the payment has already progressed past `pending`, the API returns a `422 Unprocessable Entity` error.
+
+<CodeGroup>
+
+```json 422 Unprocessable Entity
+{
+  "error": {
+    "code": "PAYMENT_NOT_CANCELLABLE",
+    "message": "Payment pmt_01HX4N3RABCDEF cannot be cancelled because it is already processing."
+  }
+}
+```
+
+</CodeGroup>
+
+If the payment ID does not exist or does not belong to your account, the API returns a `404 Not Found` error.
+
+<CodeGroup>
+
+```json 404 Not Found
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Payment pmt_01HX4N3RABCDEF not found."
+  }
+}
+```
+
+</CodeGroup>

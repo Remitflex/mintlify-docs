@@ -1,0 +1,226 @@
+---
+title: "Quickstart: Send Your First Payment with RemitFlex"
+sidebarTitle: "Quickstart"
+description: "Set up your API key, fetch a live conversion quote, create a cross-border payment, and confirm its status — all in under ten minutes."
+---
+
+This guide walks you through everything you need to make your first successful payment with RemitFlex. By the end, you'll have fetched a live conversion quote, created a payment, and confirmed its status — using the sandbox so no real funds are involved.
+
+## Prerequisites
+
+Before you start, make sure you have:
+
+- A RemitFlex account. Sign up at [dashboard.remitflex.com](https://dashboard.remitflex.com) if you don't have one yet.
+- An API key from your dashboard. The [Authentication](/authentication) guide explains how to create one.
+- `curl` installed, or a JavaScript/Node.js environment ready.
+
+<Note>
+  All examples on this page use the **sandbox** base URL and a test API key (prefixed `rf_test_`). Sandbox payments never move real funds. When you're ready to go live, swap in your live key and the production base URL.
+</Note>
+
+The API base URL for all requests is:
+
+```
+https://api.remitflex.com/v1
+```
+
+---
+
+<Steps>
+  <Step title="Get Your API Key">
+    Log in to the [RemitFlex Dashboard](https://dashboard.remitflex.com), navigate to **Settings → API Keys**, and click **Create new key**. Give the key a descriptive name (for example, `quickstart-test`) and select the **Sandbox** environment.
+
+    Copy the key immediately — it is only shown once. Store it in an environment variable so you never hard-code it in your source files:
+
+    ```bash
+    export REMITFLEX_API_KEY="rf_test_YOUR_KEY_HERE"
+    ```
+
+    <Tip>
+      Using an environment variable from the start builds the right habit before you move to production keys. See the [Authentication](/authentication) guide for a full security checklist.
+    </Tip>
+  </Step>
+
+  <Step title="Fetch a Conversion Quote">
+    Before creating a payment, request a quote to see the exact exchange rate, converted amount, and fee that will apply. Quotes expire after five minutes, so request one immediately before you intend to create a payment.
+
+    <CodeGroup>
+      ```bash curl
+      curl --request POST \
+        --url https://api.remitflex.com/v1/conversions/quote \
+        --header "Authorization: Bearer $REMITFLEX_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data '{
+          "from_currency": "USDC",
+          "to_currency": "USD",
+          "amount": 1000
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch("https://api.remitflex.com/v1/conversions/quote", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.REMITFLEX_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from_currency: "USDC",
+          to_currency: "USD",
+          amount: 1000,
+        }),
+      });
+
+      const quote = await response.json();
+      console.log(quote);
+      ```
+    </CodeGroup>
+
+    A successful response looks like this:
+
+    ```json
+    {
+      "quote_id": "qt_01HX4N2Q...",
+      "from_currency": "USDC",
+      "to_currency": "USD",
+      "amount": 1000,
+      "converted_amount": 999.50,
+      "exchange_rate": 0.9995,
+      "fee": 0.50,
+      "expires_at": "2024-01-15T10:35:00Z"
+    }
+    ```
+
+    Note the `quote_id` — you can optionally attach it to your payment request to lock in this rate. If you omit it, RemitFlex generates a fresh quote at the moment of payment creation.
+  </Step>
+
+  <Step title="Create a Payment">
+    With a quote in hand, create your first payment. This example sends 500 USDC from the US to a EUR bank account in Spain.
+
+    <CodeGroup>
+      ```bash curl
+      curl --request POST \
+        --url https://api.remitflex.com/v1/payments \
+        --header "Authorization: Bearer $REMITFLEX_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data '{
+          "amount": 500,
+          "currency": "USDC",
+          "destination_currency": "EUR",
+          "recipient": {
+            "name": "Maria Garcia",
+            "account_number": "ES9121000418401234567891",
+            "bank_code": "CAIXESBBXXX"
+          },
+          "reference": "Invoice #INV-2024-001",
+          "corridor": "US-EU"
+        }'
+      ```
+
+      ```javascript JavaScript
+      const response = await fetch("https://api.remitflex.com/v1/payments", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.REMITFLEX_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: 500,
+          currency: "USDC",
+          destination_currency: "EUR",
+          recipient: {
+            name: "Maria Garcia",
+            account_number: "ES9121000418401234567891",
+            bank_code: "CAIXESBBXXX",
+          },
+          reference: "Invoice #INV-2024-001",
+          corridor: "US-EU",
+        }),
+      });
+
+      const payment = await response.json();
+      console.log(payment);
+      ```
+    </CodeGroup>
+
+    RemitFlex returns a payment object immediately with a `pending` status:
+
+    ```json
+    {
+      "id": "pmt_01HX4N3R...",
+      "status": "pending",
+      "amount": 500,
+      "currency": "USDC",
+      "destination_currency": "EUR",
+      "converted_amount": 461.25,
+      "exchange_rate": 0.9225,
+      "fee": 2.50,
+      "recipient": {
+        "name": "Maria Garcia",
+        "account_number": "ES9121000418401234567891"
+      },
+      "created_at": "2024-01-15T10:30:00Z",
+      "estimated_delivery": "2024-01-15T14:30:00Z"
+    }
+    ```
+
+    Save the `id` field (here `pmt_01HX4N3R...`) — you'll use it to track the payment's progress.
+  </Step>
+
+  <Step title="Check Payment Status">
+    Poll the payment endpoint or listen for a webhook event to track when the payment moves through processing, conversion, and settlement. To fetch the current status directly:
+
+    <CodeGroup>
+      ```bash curl
+      curl --request GET \
+        --url https://api.remitflex.com/v1/payments/pmt_01HX4N3R... \
+        --header "Authorization: Bearer $REMITFLEX_API_KEY"
+      ```
+
+      ```javascript JavaScript
+      const paymentId = "pmt_01HX4N3R...";
+
+      const response = await fetch(
+        `https://api.remitflex.com/v1/payments/${paymentId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${process.env.REMITFLEX_API_KEY}`,
+          },
+        }
+      );
+
+      const payment = await response.json();
+      console.log(payment.status);
+      ```
+    </CodeGroup>
+
+    The `status` field progresses through these values as the payment settles:
+
+    | Status | Meaning |
+    |---|---|
+    | `pending` | Payment received and queued for processing |
+    | `processing` | Conversion and routing in progress |
+    | `in_transit` | Funds sent to the recipient's bank |
+    | `completed` | Recipient's bank confirmed delivery |
+    | `failed` | Payment could not be completed — check `failure_reason` |
+
+    <Note>
+      In production, we recommend subscribing to webhook events rather than polling. Webhooks deliver real-time status updates to your server the moment a payment changes state.
+    </Note>
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+You've made your first RemitFlex payment. Here's where to go from here:
+
+<CardGroup cols={2}>
+  <Card title="Send a Payment" icon="arrows-rotate" href="/guides/send-payment">
+    Dive deeper into payment creation — corridors, recipient validation, idempotency keys, and error handling.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Browse the complete API reference for every endpoint, request parameter, and response field.
+  </Card>
+</CardGroup>

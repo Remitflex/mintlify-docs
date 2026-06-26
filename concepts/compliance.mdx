@@ -1,0 +1,143 @@
+---
+title: "Compliance Framework: KYC, AML, and Regulatory Cover"
+sidebarTitle: "Compliance"
+description: "Understand how RemitFlex handles KYC, KYB, AML screening, and sanctions checks — and what your verification tier means for payment limits and features."
+---
+
+RemitFlex is built on a licensed, compliant payment infrastructure so that the regulatory complexity of moving money across borders doesn't fall on your engineering team. Every payment processed through RemitFlex passes through automated compliance controls — identity verification, transaction monitoring, and sanctions screening — that operate in the background without adding friction to your integration. This page explains how the compliance framework works, what you need to do to get verified, and what to expect when a payment requires additional review.
+
+<Note>
+  RemitFlex operates as a licensed Money Services Business (MSB) and holds the necessary money transmitter licences for the jurisdictions it serves. When you process payments through RemitFlex, you are operating under RemitFlex's regulatory umbrella. **You do not need your own money transmitter licence to use RemitFlex.**
+</Note>
+
+## Verification Tiers
+
+Your account starts in the **Unverified (Sandbox)** tier, which is sufficient for development and testing. To move live payment volume, you must complete either KYC (for individual accounts) or KYB (for business accounts). Your verification tier determines the payment limits applied to your account.
+
+| Tier | Max per Payment | Daily Limit | Monthly Limit |
+|---|---|---|---|
+| Unverified (Sandbox) | $1,000 | $5,000 | $20,000 |
+| KYC Verified (Individual) | $10,000 | $50,000 | $200,000 |
+| KYB Verified (Business) | $500,000 | $2,000,000 | Unlimited |
+
+<Info>
+  Sandbox limits apply only to the test environment. Production accounts in any verified tier process real value and are subject to the limits in the table above. Sandbox payments never touch live funds regardless of the amounts used.
+</Info>
+
+## KYC — Know Your Customer
+
+KYC verification is required for individual accounts before you can process live payments in the production environment. RemitFlex uses automated identity verification powered by document analysis and liveness checks.
+
+**To complete KYC:**
+
+1. Log in to the RemitFlex dashboard and navigate to **Account → Verification**.
+2. Select **Individual Verification**.
+3. Upload a government-issued photo ID (passport, national ID, or driver's licence).
+4. Complete the liveness check — a short selfie prompt confirming the document belongs to you.
+5. Submit. Automated review typically completes within **2–5 minutes**. Complex cases may require manual review within one business day.
+
+Once approved, your account is upgraded to the **KYC Verified** tier and production payment limits apply immediately.
+
+<Warning>
+  KYC verification is tied to the account owner. If you are building a platform where your end users send payments, you are responsible for conducting KYC on your users before submitting payments on their behalf. Contact your RemitFlex account manager to discuss sub-account and platform compliance models.
+</Warning>
+
+## KYB — Know Your Business
+
+KYB verification is required for business accounts. It establishes the legal identity of your organisation, its beneficial owners, and its intended use of RemitFlex services. Verified business accounts unlock the highest payment limits and access to all production corridors.
+
+**To complete KYB, submit the following via the dashboard under Account → Business Verification:**
+
+<Accordion title="Required KYB Documents">
+
+| Document | Details |
+|---|---|
+| Certificate of Incorporation | Issued by the relevant government registry; must be dated within the past 12 months or accompanied by a Certificate of Good Standing |
+| Business Registration / Licence | Relevant operating licence if applicable to your industry |
+| Beneficial Ownership Declaration | Names, nationalities, and ownership percentages for all individuals owning 25% or more of the business |
+| Government-issued ID for each beneficial owner | Passport or national ID for each declared owner |
+| Proof of Business Address | Utility bill or bank statement dated within 3 months |
+
+</Accordion>
+
+KYB reviews are conducted by RemitFlex's compliance team and typically complete within **1–3 business days**. You will receive an email notification and a `kyb.approved` or `kyb.additional_information_required` webhook event when the review concludes.
+
+<Tip>
+  Prepare your KYB documents before applying. Incomplete submissions are the most common cause of delays. A dedicated compliance onboarding guide is available in the RemitFlex Help Centre if you need guidance on specific document formats.
+</Tip>
+
+## AML — Anti-Money Laundering
+
+RemitFlex runs automated Anti-Money Laundering (AML) transaction monitoring on every payment. The monitoring system analyses payment patterns, amounts, frequency, and counterparty data to detect suspicious activity automatically.
+
+Key aspects of RemitFlex's AML controls:
+
+- **Real-time screening** — Every payment is screened before funds move. Payments that exceed risk thresholds are held for review rather than processed.
+- **Velocity monitoring** — The system tracks transaction patterns over time. Unusual spikes in volume or frequency trigger automatic flags.
+- **Counterparty risk scoring** — Destination accounts and recipient details are assessed for risk signals before each payment.
+- **Automatic Suspicious Activity Reports (SARs)** — RemitFlex files SARs with the relevant financial intelligence unit when required by law. You are not responsible for filing these reports.
+
+When a payment is flagged for AML review, it transitions to a `compliance_review` sub-status and you receive a `compliance.review_required` webhook event. See the [Compliance Webhooks](#compliance-webhooks) section below.
+
+## Sanctions Screening
+
+Every payment is automatically checked against international sanctions lists before processing. Screening covers:
+
+- **OFAC (Office of Foreign Assets Control)** — US sanctions lists including SDN (Specially Designated Nationals)
+- **EU Consolidated Sanctions List**
+- **UN Security Council Consolidated List**
+- **FATF High-Risk Jurisdictions** — Countries subject to enhanced due diligence or restrictions
+
+If a payment matches a sanctions list entry, it is automatically blocked and a `payment.failed` status is issued with a `sanctions_match` failure reason. RemitFlex's compliance team is notified and handles the regulatory response. You should not attempt to re-submit a blocked payment.
+
+<Warning>
+  Sanctions matches are non-negotiable blocks. RemitFlex cannot override or bypass a confirmed sanctions match. If you believe a match is a false positive (e.g., a name collision), contact RemitFlex compliance at compliance@remitflex.io with supporting documentation.
+</Warning>
+
+## Data Privacy
+
+RemitFlex processes recipient personal data — names, bank account details, and identity documents — in accordance with global data protection regulations.
+
+- **GDPR compliance** — RemitFlex is fully GDPR-compliant. Recipient data submitted via the API is processed solely for the purpose of executing and complying with payment obligations.
+- **Encryption at rest** — All recipient personal data is encrypted at rest using AES-256 encryption.
+- **Encryption in transit** — All API communication uses TLS 1.2 or higher.
+- **Data retention** — Payment records and associated personal data are retained for the period required by applicable financial regulations, then securely deleted.
+- **Data processing agreements** — A Data Processing Agreement (DPA) is available upon request for customers subject to GDPR. Contact your account manager or email privacy@remitflex.io.
+
+<Info>
+  You are responsible for obtaining the necessary consent from your end users to share their personal data with RemitFlex for payment processing purposes. RemitFlex's Privacy Policy, linked in your dashboard, can be referenced in your own privacy notice.
+</Info>
+
+## Compliance Webhooks
+
+RemitFlex emits webhook events for compliance-related payment state changes. Configure your webhook endpoint in the dashboard under **Developers → Webhooks** to receive these events.
+
+| Event | Description |
+|---|---|
+| `compliance.review_required` | A payment has been flagged for manual compliance review and is on hold. Include the `payment_id` in any support enquiry. |
+| `compliance.review_approved` | Manual review concluded successfully. The payment will resume processing automatically. |
+| `compliance.review_rejected` | Manual review resulted in rejection. The payment is cancelled and funds are returned to your balance. |
+| `kyc.approved` | An individual KYC submission was approved. Account tier updated. |
+| `kyc.additional_information_required` | More documentation is needed to complete KYC. Review the dashboard for details. |
+| `kyb.approved` | Business KYB submission was approved. Account tier updated. |
+| `kyb.additional_information_required` | More documentation is needed to complete KYB. |
+
+**Example `compliance.review_required` payload:**
+
+```json
+{
+  "event": "compliance.review_required",
+  "created_at": "2024-11-15T14:23:01Z",
+  "data": {
+    "payment_id": "pmt_01J3KQ9XYZABC123",
+    "review_reason": "aml_velocity_flag",
+    "review_sla_hours": 24,
+    "amount": 48500.00,
+    "currency": "USDC"
+  }
+}
+```
+
+<Tip>
+  Build a handler for `compliance.review_required` events in your integration. When this event fires, notify your operations team so they can provide any additional information to RemitFlex compliance promptly — this is the fastest way to resolve a review and get your payment moving.
+</Tip>

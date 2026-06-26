@@ -1,0 +1,221 @@
+---
+title: "Convert Between Stablecoins and Fiat with RemitFlex"
+sidebarTitle: "Currency Conversion"
+description: "Request a live exchange rate quote, lock it in, and execute a stablecoin-to-stablecoin or stablecoin-to-fiat conversion in two API calls."
+---
+
+RemitFlex's Conversions API lets you swap between supported stablecoins or convert stablecoins to fiat in two steps: first request a quote to get a live rate, then execute that quote to lock the rate and settle the conversion. This guide covers both endpoints, explains how quote expiry works, and shows the supported currency pairs.
+
+## How conversions work
+
+The conversion flow is always two calls:
+
+1. **Get a quote** — RemitFlex returns a live exchange rate and a `quote_id` valid for 30 seconds.
+2. **Execute the quote** — You submit the `quote_id`; RemitFlex locks the rate and settles the conversion immediately.
+
+This two-step design lets you display an accurate rate to your users before committing funds. Once you execute, the rate is locked regardless of any market movement that occurs during settlement.
+
+---
+
+## Supported conversion pairs
+
+| From | To | Direction |
+|---|---|---|
+| `USDC` | `USDT` | Stablecoin swap |
+| `USDT` | `USDC` | Stablecoin swap |
+| `USDC` | `EURC` | Stablecoin swap |
+| `EURC` | `USDC` | Stablecoin swap |
+| `USDC` | `USD` | Off-ramp |
+| `USDT` | `USD` | Off-ramp |
+| `EURC` | `EUR` | Off-ramp |
+
+<Note>
+  Off-ramp conversions (stablecoin → fiat) settle to a bank account. If you need to deliver fiat directly to a recipient, use the [off-ramp guide](/guides/off-ramp) instead, which combines conversion and bank transfer into a single flow.
+</Note>
+
+---
+
+## Step 1: Get a quote
+
+Call `POST /conversions/quote` with the source currency, target currency, and amount you want to convert.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/conversions/quote \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_currency": "USDC",
+    "to_currency": "EURC",
+    "amount": 5000
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.remitflex.com/v1/conversions/quote',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from_currency: 'USDC',
+      to_currency: 'EURC',
+      amount: 5000,
+    }),
+  }
+);
+
+const quote = await response.json();
+console.log(quote);
+```
+
+</CodeGroup>
+
+**Expected response**
+
+```json
+{
+  "quote_id": "qt_01HX9M2P4KZBN8VXQR7YWT3CD",
+  "from_currency": "USDC",
+  "to_currency": "EURC",
+  "amount": 5000,
+  "converted_amount": 4612.50,
+  "exchange_rate": 0.9225,
+  "fee": 12.50,
+  "fee_currency": "USDC",
+  "expires_at": "2024-01-15T10:30:30Z",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+### Quote response fields
+
+| Field | Type | Description |
+|---|---|---|
+| `quote_id` | string | Unique identifier for this quote; pass to `/conversions/execute` |
+| `from_currency` | string | Source currency as requested |
+| `to_currency` | string | Target currency as requested |
+| `amount` | number | Source amount as requested |
+| `converted_amount` | number | Amount you will receive after fees |
+| `exchange_rate` | number | Mid-market rate applied |
+| `fee` | number | RemitFlex conversion fee |
+| `fee_currency` | string | Currency in which the fee is denominated |
+| `expires_at` | string | ISO 8601 timestamp after which the quote is invalid |
+| `created_at` | string | ISO 8601 timestamp when the quote was generated |
+
+<Warning>
+  Quotes expire **30 seconds** after `created_at`. If you submit an execute request after `expires_at`, the API returns a `QUOTE_EXPIRED` error and you must request a new quote. Always execute within the same request cycle — avoid storing a quote ID for later use.
+</Warning>
+
+---
+
+## Step 2: Execute the conversion
+
+Pass the `quote_id` to `POST /conversions/execute`. RemitFlex locks the rate and settles the conversion immediately.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/conversions/execute \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "qt_01HX9M2P4KZBN8VXQR7YWT3CD"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.remitflex.com/v1/conversions/execute',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      quote_id: 'qt_01HX9M2P4KZBN8VXQR7YWT3CD',
+    }),
+  }
+);
+
+const conversion = await response.json();
+console.log(conversion);
+```
+
+</CodeGroup>
+
+**Expected response**
+
+```json
+{
+  "conversion_id": "con_01HX9M3Q7RVZWP9QJDB6CTYMX",
+  "status": "completed",
+  "from_currency": "USDC",
+  "to_currency": "EURC",
+  "amount": 5000,
+  "converted_amount": 4612.50,
+  "exchange_rate": 0.9225,
+  "fee": 12.50,
+  "completed_at": "2024-01-15T10:30:05Z"
+}
+```
+
+A `status` of `completed` confirms that the conversion has settled and the converted balance is available in your wallet.
+
+---
+
+## Rate locking guarantee
+
+Once you call `/conversions/execute` with a valid `quote_id`, RemitFlex guarantees the quoted `exchange_rate` regardless of market movement during settlement. Your `converted_amount` will match exactly what the quote showed.
+
+<Tip>
+  If you are building a user-facing exchange UI, fetch a new quote each time the user updates the amount or currency pair, and start a countdown timer from `expires_at` so users know how long the rate is held.
+</Tip>
+
+---
+
+## Handling quote expiry
+
+If execution fails with `QUOTE_EXPIRED`, fetch a fresh quote and retry immediately:
+
+```javascript
+async function convertWithFreshQuote(fromCurrency, toCurrency, amount) {
+  // 1. Get a live quote
+  const quoteRes = await fetch('https://api.remitflex.com/v1/conversions/quote', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from_currency: fromCurrency, to_currency: toCurrency, amount }),
+  });
+  const quote = await quoteRes.json();
+
+  // 2. Execute immediately — do not await anything else between these two calls
+  const execRes = await fetch('https://api.remitflex.com/v1/conversions/execute', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ quote_id: quote.quote_id }),
+  });
+  const conversion = await execRes.json();
+
+  if (conversion.error === 'QUOTE_EXPIRED') {
+    // Retry once with a new quote
+    return convertWithFreshQuote(fromCurrency, toCurrency, amount);
+  }
+
+  return conversion;
+}
+```
+
+<Note>
+  You will receive a `conversion.completed` webhook event when the conversion settles. See the [webhooks guide](/guides/webhooks) to set up event listeners for your conversions.
+</Note>

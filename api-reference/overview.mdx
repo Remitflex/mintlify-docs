@@ -1,0 +1,150 @@
+---
+title: "RemitFlex REST API Overview: Requests and Conventions"
+sidebarTitle: "Overview"
+description: "Everything you need to start building with RemitFlex: base URLs, versioning, request and response formats, rate limits, and idempotency."
+---
+
+The RemitFlex API is a RESTful HTTP API that lets you programmatically send payments, convert stablecoins, and off-ramp funds across borders. All communication happens over HTTPS, all request and response bodies are JSON, and every call is authenticated with a Bearer token tied to your API key. This page covers the foundational conventions that apply to every endpoint in the API.
+
+## Base URLs
+
+RemitFlex provides two environments. Use the **sandbox** environment while you build and test — it mirrors production behavior without moving real funds. Switch to the **live** environment when you are ready to go to production.
+
+| Environment | Base URL |
+|---|---|
+| Live | `https://api.remitflex.com/v1` |
+| Sandbox | `https://sandbox.api.remitflex.com/v1` |
+
+<Note>
+  Sandbox API keys begin with `rf_test_` and live keys begin with `rf_live_`. The two prefixes are mutually exclusive — a test key will be rejected by the live base URL and vice versa.
+</Note>
+
+## Versioning
+
+The current API version is **v1**, encoded directly in the URL path (e.g. `https://api.remitflex.com/v1/payments`). When RemitFlex introduces breaking changes, a new version will be released under a new path prefix. You will receive advance notice before any existing version is deprecated.
+
+## HTTPS
+
+All API requests must use HTTPS. Plain HTTP requests are rejected at the network edge and will not reach RemitFlex servers.
+
+## Request Format
+
+Send all request bodies as JSON and include the `Content-Type: application/json` header on every `POST`, `PUT`, and `PATCH` request. Query parameters are used for filtering, sorting, and pagination on `GET` requests.
+
+```bash
+curl -X POST https://api.remitflex.com/v1/payments \
+  -H "Authorization: Bearer rf_live_xxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 100, "currency": "USDC", "destination": "acc_xxxx"}'
+```
+
+## Response Format
+
+All responses are JSON. A successful response returns the requested resource object (or a paginated list object) directly at the top level. There is no wrapping `status` or `success` field on success.
+
+**Successful single-resource response:**
+```json
+{
+  "id": "pay_01HX4K9...",
+  "status": "completed",
+  "amount": 100,
+  "currency": "USDC"
+}
+```
+
+**Successful list response:**
+```json
+{
+  "data": [...],
+  "pagination": {
+    "cursor": "cur_next_xxxx",
+    "has_more": true,
+    "total": 142
+  }
+}
+```
+
+**Error response:**
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The 'amount' field must be greater than zero.",
+    "field": "amount"
+  }
+}
+```
+
+The `field` property is present when the error is attributable to a specific request parameter and omitted otherwise.
+
+## Authentication
+
+Every request must include your API key in the `Authorization` header as a Bearer token:
+
+```
+Authorization: Bearer rf_live_xxxx
+```
+
+See the [Authentication](/api-reference/authentication) page for key types, scopes, and error codes.
+
+## Rate Limits
+
+RemitFlex enforces rate limits per API key to ensure fair usage and platform stability.
+
+| Limit type | Value |
+|---|---|
+| Default | 100 requests per minute |
+| Burst | 20 requests per second |
+
+Every API response includes the following headers so you can monitor your current usage:
+
+| Header | Description |
+|---|---|
+| `X-RateLimit-Limit` | Maximum number of requests allowed in the current window |
+| `X-RateLimit-Remaining` | Number of requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp (seconds) at which the current window resets |
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response. Back off and retry after the timestamp in `X-RateLimit-Reset`.
+
+<Tip>
+  For high-throughput workloads, batch operations where possible and distribute requests evenly rather than sending in bursts. Contact RemitFlex support if your use case requires a higher limit.
+</Tip>
+
+## Idempotency
+
+Network failures can leave you uncertain whether a request was processed. To safely retry `POST` requests without risking duplicate operations, include an `Idempotency-Key` header set to a unique UUID:
+
+```
+Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+```
+
+RemitFlex stores the result of the first request for that key and returns the cached response for any subsequent retries with the same key. Idempotency keys expire after 24 hours.
+
+<Warning>
+  Idempotency keys are scoped to your API key. Use a fresh UUID for each distinct operation — reusing a key for a genuinely different request will return the original response instead of processing the new one.
+</Warning>
+
+## Pagination
+
+List endpoints return paginated results using cursor-based pagination. Pass the `cursor` value from a response into the next request to retrieve the following page. See the [Pagination](/api-reference/pagination) page for full details and a worked example.
+
+## Minimal Example
+
+The following example fetches your most recent payments and shows a typical paginated response.
+
+```bash
+curl -X GET https://api.remitflex.com/v1/payments \
+  -H "Authorization: Bearer rf_live_xxxx" \
+  -H "Content-Type: application/json"
+```
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "cursor": "cur_next_xxxx",
+    "has_more": true,
+    "total": 142
+  }
+}
+```

@@ -1,0 +1,350 @@
+---
+title: "Send a Cross-Border Stablecoin Payment with RemitFlex"
+sidebarTitle: "Send Payment"
+description: "Check corridor availability, lock an exchange rate, create a payment, and track it through to fiat delivery — all in a single orchestrated flow."
+---
+
+Sending a cross-border payment with RemitFlex takes four steps: confirm the corridor is open, get a live conversion quote, submit the payment, then monitor its progress until fiat lands in your recipient's account. This guide walks you through each step with working code examples.
+
+## Prerequisites
+
+- A RemitFlex account with an active API key
+- Your recipient's bank details (IBAN or local account number, BIC/SWIFT or local routing code)
+- Sufficient stablecoin balance in your RemitFlex wallet
+
+---
+
+<Steps>
+
+### Step 1: Check corridor availability
+
+Before creating a payment, verify that RemitFlex supports the source-to-destination corridor. Pass `source` and `destination` as ISO 3166-1 alpha-2 country codes.
+
+<CodeGroup>
+
+```bash curl
+curl -G https://api.remitflex.com/v1/corridors \
+  -d source=US \
+  -d destination=MX \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.remitflex.com/v1/corridors?source=US&destination=MX',
+  {
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data);
+```
+
+</CodeGroup>
+
+**Expected response**
+
+```json
+{
+  "source_country": "US",
+  "destination_country": "MX",
+  "available": true,
+  "supported_currencies": ["USDC", "USDT"],
+  "destination_currencies": ["MXN"],
+  "estimated_delivery_hours": 24
+}
+```
+
+<Note>
+  If `available` is `false`, the corridor may be temporarily suspended for compliance reasons or scheduled maintenance. Check the [RemitFlex status page](https://status.remitflex.com) for updates.
+</Note>
+
+---
+
+### Step 2: Get a conversion quote
+
+Request a live exchange rate for your payment. The quote locks the rate for 30 seconds — execute your payment before it expires or you will need to request a new one.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/conversions/quote \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_currency": "USDC",
+    "to_currency": "MXN",
+    "amount": 500
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.remitflex.com/v1/conversions/quote',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from_currency: 'USDC',
+      to_currency: 'MXN',
+      amount: 500,
+    }),
+  }
+);
+
+const quote = await response.json();
+console.log(quote);
+```
+
+</CodeGroup>
+
+**Expected response**
+
+```json
+{
+  "quote_id": "qt_01HX9M2P4KZBN8VXQR7YWT3CD",
+  "from_currency": "USDC",
+  "to_currency": "MXN",
+  "amount": 500,
+  "converted_amount": 8537.50,
+  "exchange_rate": 17.075,
+  "fee": 1.25,
+  "fee_currency": "USDC",
+  "expires_at": "2024-01-15T10:30:30Z",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+Save the `quote_id` — you'll reference it when creating the payment.
+
+---
+
+### Step 3: Create the payment
+
+Submit the payment using the `quote_id` from the previous step alongside your recipient details. The rate is locked at the quoted price as long as you submit within the 30-second window.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/payments \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "qt_01HX9M2P4KZBN8VXQR7YWT3CD",
+    "amount": 500,
+    "currency": "USDC",
+    "destination_currency": "MXN",
+    "reference": "invoice-2024-0042",
+    "recipient": {
+      "name": "Maria García López",
+      "account_number": "002180700951485075",
+      "bank_code": "BNMXMXMM",
+      "bank_country": "MX"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.remitflex.com/v1/payments', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    quote_id: 'qt_01HX9M2P4KZBN8VXQR7YWT3CD',
+    amount: 500,
+    currency: 'USDC',
+    destination_currency: 'MXN',
+    reference: 'invoice-2024-0042',
+    recipient: {
+      name: 'Maria García López',
+      account_number: '002180700951485075',
+      bank_code: 'BNMXMXMM',
+      bank_country: 'MX',
+    },
+  }),
+});
+
+const payment = await response.json();
+console.log(payment);
+```
+
+</CodeGroup>
+
+**Expected response**
+
+```json
+{
+  "id": "pmt_01HX4N3RKVZWP9QJDB6CTYMX8",
+  "status": "pending",
+  "amount": 500,
+  "currency": "USDC",
+  "destination_currency": "MXN",
+  "converted_amount": 8537.50,
+  "exchange_rate": 17.075,
+  "fee": 1.25,
+  "recipient": {
+    "name": "Maria García López",
+    "account_number": "002180700951485075",
+    "bank_code": "BNMXMXMM",
+    "bank_country": "MX"
+  },
+  "reference": "invoice-2024-0042",
+  "estimated_delivery": "2024-01-16T10:30:00Z",
+  "created_at": "2024-01-15T10:30:05Z",
+  "updated_at": "2024-01-15T10:30:05Z"
+}
+```
+
+Store the payment `id` (prefixed `pmt_`) to poll for status updates or correlate incoming webhook events.
+
+---
+
+### Step 4: Monitor payment status
+
+Poll the payment endpoint or listen for webhook events to track progress from `pending` through to `delivered`.
+
+<CodeGroup>
+
+```bash curl
+curl https://api.remitflex.com/v1/payments/pmt_01HX4N3RKVZWP9QJDB6CTYMX8 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.remitflex.com/v1/payments/pmt_01HX4N3RKVZWP9QJDB6CTYMX8',
+  {
+    headers: {
+      Authorization: 'Bearer YOUR_API_KEY',
+    },
+  }
+);
+
+const payment = await response.json();
+console.log(payment.status);
+```
+
+</CodeGroup>
+
+</Steps>
+
+---
+
+## Required recipient fields
+
+The `recipient` object must include these fields for fiat delivery:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | ✅ Yes | Recipient's full legal name |
+| `account_number` | string | ✅ Yes | IBAN (Europe) or local account number |
+| `bank_code` | string | ✅ Yes | BIC/SWIFT code or local routing number |
+| `bank_country` | string | ✅ Yes | ISO 3166-1 alpha-2 country code (e.g., `MX`, `DE`) |
+| `address` | object | No | Postal address — required by some corridors for compliance |
+
+---
+
+## Payment object reference
+
+Every payment response contains these fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique payment ID, prefixed `pmt_` |
+| `status` | string | Current lifecycle status (see below) |
+| `amount` | number | Source amount sent |
+| `currency` | string | Source currency (e.g., `USDC`) |
+| `destination_currency` | string | Destination fiat or stablecoin |
+| `converted_amount` | number | Amount delivered to the recipient |
+| `exchange_rate` | number | FX rate applied at execution |
+| `fee` | number | RemitFlex fee charged in `currency` |
+| `recipient` | object | Recipient bank details |
+| `reference` | string | Your reference string, echoed back |
+| `estimated_delivery` | string | ISO 8601 timestamp for expected delivery |
+| `created_at` | string | ISO 8601 creation timestamp |
+| `updated_at` | string | ISO 8601 timestamp of last status change |
+
+---
+
+## Payment status descriptions
+
+| Status | Meaning |
+|---|---|
+| `pending` | Payment received and queued for processing |
+| `processing` | Funds are being moved and FX conversion is in progress |
+| `settled` | Stablecoin leg has settled on-chain |
+| `delivered` | Fiat has been deposited into the recipient's bank account |
+| `failed` | Payment could not be completed (see `failure_reason`) |
+| `cancelled` | Payment was cancelled before processing began |
+
+---
+
+## Handling payment failures
+
+If a payment reaches `failed` status, the response includes a `failure_reason` field explaining the cause. Common reasons include quote expiry, insufficient balance, and recipient bank rejection.
+
+**If the quote has expired:**
+
+```json
+{
+  "id": "pmt_01HX4N3RKVZWP9QJDB6CTYMX8",
+  "status": "failed",
+  "failure_reason": "QUOTE_EXPIRED",
+  "failure_message": "The quote qt_01HX9M2P... expired before the payment was submitted."
+}
+```
+
+Request a fresh quote and resubmit the payment:
+
+```javascript JavaScript
+async function sendPaymentWithRetry(paymentDetails, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Get a fresh quote
+    const quoteRes = await fetch('https://api.remitflex.com/v1/conversions/quote', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from_currency: paymentDetails.currency,
+        to_currency: paymentDetails.destination_currency,
+        amount: paymentDetails.amount,
+      }),
+    });
+    const quote = await quoteRes.json();
+
+    // Submit payment immediately with the new quote
+    const paymentRes = await fetch('https://api.remitflex.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...paymentDetails, quote_id: quote.quote_id }),
+    });
+    const payment = await paymentRes.json();
+
+    if (payment.status !== 'failed' || payment.failure_reason !== 'QUOTE_EXPIRED') {
+      return payment;
+    }
+  }
+  throw new Error('Payment failed after maximum retries');
+}
+```
+
+<Warning>
+  Always fetch a new quote immediately before retrying — do not reuse an expired `quote_id`. Each quote is valid for 30 seconds from `created_at`.
+</Warning>
+
+<Tip>
+  For production workloads, consider listening to [webhook events](/guides/webhooks) instead of polling. Webhooks deliver real-time status updates to your server without additional API calls.
+</Tip>

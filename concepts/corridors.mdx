@@ -1,0 +1,145 @@
+---
+title: "Payment Corridors: Supported Routes, Limits, and API"
+sidebarTitle: "Corridors"
+description: "Explore the country and currency pairs RemitFlex supports, their settlement times, per-payment limits, and how to query available routes via the API."
+---
+
+A payment corridor defines a supported source-to-destination currency pair — for example, USD in the United States to MXN in Mexico. Each corridor is not just a geographic route; it encodes a specific set of rules including the stablecoins supported for settlement, the exchange rate mechanism, regulatory requirements, and the local payment rail used to deliver funds at the destination. Understanding corridors helps you set accurate delivery expectations, choose the right stablecoins, and build payment flows that route reliably.
+
+## What Makes a Corridor
+
+Every corridor in RemitFlex is defined by four attributes:
+
+- **Source country and currency** — Where the payment originates and in what denomination
+- **Destination country and currency** — Where funds are delivered and in what local currency
+- **Supported stablecoins** — Which stablecoins RemitFlex can use to settle across this corridor
+- **Settlement characteristics** — Average settlement time, minimum and maximum payment amounts, and any corridor-specific compliance requirements
+
+The RemitFlex orchestration engine matches your payment's source and destination currencies to an active corridor, then selects the optimal stablecoin and liquidity route within that corridor automatically.
+
+<Info>
+  Corridor availability can change based on regulatory updates, liquidity partner status, or network conditions. Always query the `/corridors` endpoint at integration time — and consider caching results with a short TTL — rather than hardcoding corridor assumptions.
+</Info>
+
+## Supported Corridors
+
+The following corridors are available in RemitFlex production environments. All amounts are in USD equivalent unless otherwise noted.
+
+| Corridor | Source | Destination | Stablecoins | Avg Settlement |
+|---|---|---|---|---|
+| US → EU | USD / USDC | EUR / EURC | USDC, EURC | < 1 hour |
+| US → Mexico | USD / USDC | MXN | USDC, USDT | 2–4 hours |
+| US → Philippines | USD / USDC | PHP | USDC, USDT | 4–8 hours |
+| US → Nigeria | USD / USDC | NGN | USDC, USDT | 2–4 hours |
+| EU → UK | EUR / EURC | GBP | EURC | < 1 hour |
+| Global (Stablecoin Swap) | USDC | USDT | Stablecoin swap | < 5 minutes |
+
+<Tip>
+  The **Global Stablecoin Swap** corridor has no destination country — it converts between USDC and USDT for any recipient holding a stablecoin wallet. This is the fastest corridor in RemitFlex and is useful for treasury rebalancing or paying partners who prefer USDT liquidity.
+</Tip>
+
+## Corridor-Specific Limits
+
+Each corridor enforces minimum and maximum payment amounts to comply with local regulatory thresholds and to ensure liquidity is available for settlement. Payments outside these bounds are rejected at creation time with a `corridor_limit_exceeded` or `corridor_minimum_not_met` error.
+
+| Corridor | Minimum Payment | Maximum per Payment |
+|---|---|---|
+| US → EU | $10 | $100,000 |
+| US → Mexico | $10 | $50,000 |
+| US → Philippines | $10 | $25,000 |
+| US → Nigeria | $10 | $25,000 |
+| EU → UK | €10 | €100,000 |
+| Global Stablecoin Swap | $1 | $500,000 |
+
+<Warning>
+  Maximum payment limits are per individual payment, not per day. If you need to send amounts above these thresholds, split into multiple payments. Daily and monthly limits are governed separately by your [verification tier](/concepts/compliance).
+</Warning>
+
+## How Corridor Availability Affects Routing
+
+When you submit a payment, the orchestration engine checks corridor availability in real time before accepting the payment. If the requested corridor is temporarily unavailable — for example, due to a local banking outage in the destination country — the API returns a `corridor_unavailable` error and RemitFlex does not debit your balance.
+
+You can use the `GET /corridors` endpoint to:
+
+- List all currently active corridors before presenting payment options to your users
+- Check the real-time status of a specific corridor
+- Retrieve the latest min/max limits and average settlement times
+- Confirm which stablecoins are accepted on a given route
+
+## Querying Corridors via API
+
+Use `GET /corridors` to retrieve all available corridors and their current properties. The response is a paginated list of corridor objects.
+
+```bash
+curl -X GET https://api.remitflex.io/v1/corridors \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Example response:**
+
+```json
+{
+  "corridors": [
+    {
+      "id": "US-EU",
+      "source_country": "US",
+      "destination_country": "EU",
+      "source_currencies": ["USD", "USDC"],
+      "destination_currencies": ["EUR", "EURC"],
+      "min_amount": 10,
+      "max_amount": 100000,
+      "avg_settlement_time_minutes": 30
+    },
+    {
+      "id": "US-MX",
+      "source_country": "US",
+      "destination_country": "MX",
+      "source_currencies": ["USD", "USDC"],
+      "destination_currencies": ["MXN"],
+      "min_amount": 10,
+      "max_amount": 50000,
+      "avg_settlement_time_minutes": 180
+    }
+  ],
+  "pagination": {
+    "total": 6,
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+To retrieve a single corridor by ID, use `GET /corridors/{corridor_id}`:
+
+```bash
+curl -X GET https://api.remitflex.io/v1/corridors/US-EU \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Accordion title="Available Query Parameters for GET /corridors">
+
+| Parameter | Type | Description |
+|---|---|---|
+| `source_country` | string | Filter by ISO 3166-1 alpha-2 source country code (e.g., `US`, `GB`) |
+| `destination_country` | string | Filter by ISO 3166-1 alpha-2 destination country code |
+| `source_currency` | string | Filter by source currency or stablecoin ticker (e.g., `USD`, `USDC`) |
+| `destination_currency` | string | Filter by destination currency ticker |
+| `status` | string | Filter by corridor status: `active`, `degraded`, or `unavailable` |
+| `page` | integer | Page number for paginated results (default: `1`) |
+| `per_page` | integer | Results per page, max 100 (default: `20`) |
+
+</Accordion>
+
+## Corridor Status
+
+A corridor can be in one of three operational states:
+
+| Status | Meaning |
+|---|---|
+| `active` | Corridor is fully operational. Payments will be accepted and routed normally. |
+| `degraded` | Corridor is operational but experiencing delays. Average settlement times may be longer than stated. |
+| `unavailable` | Corridor is temporarily offline. Payments targeting this corridor will be rejected at creation. |
+
+<Note>
+  Subscribe to RemitFlex status updates at **status.remitflex.io** to receive notifications when corridor status changes. You can also configure a `corridor.status_changed` webhook event to receive alerts programmatically in your application.
+</Note>

@@ -1,0 +1,407 @@
+---
+title: "Webhook Events Reference: All RemitFlex Event Types"
+sidebarTitle: "Event Types"
+description: "Complete reference for all webhook events emitted by RemitFlex, including payload structure and example data for every event category."
+---
+
+RemitFlex delivers real-time notifications to your server by sending an HTTP `POST` request to your registered webhook endpoint whenever a significant event occurs on your account. Each request contains a JSON payload describing the event type, when it occurred, and the relevant data object. You can register and manage webhook endpoints from **Dashboard → Settings → Webhooks**.
+
+Before processing any webhook, you should [verify the request signature](/api-reference/webhooks/verify) to confirm it genuinely originated from RemitFlex.
+
+## Payload Structure
+
+Every webhook request body follows the same top-level envelope:
+
+```json
+{
+  "id": "evt_01HX9P5S...",
+  "type": "payment.delivered",
+  "created_at": "2024-01-15T14:30:00Z",
+  "data": { ... }
+}
+```
+
+<ResponseField name="id" type="string">
+  Unique identifier for this webhook event, prefixed with `evt_`. Use this to deduplicate deliveries — RemitFlex may retry delivery if your endpoint does not respond with a `2xx` status.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The event type string, in the format `resource.action` (e.g., `payment.delivered`). Use this to route the event to the appropriate handler in your code.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the event was generated. Use this to verify the event is recent and guard against replay attacks.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The event-specific payload. The shape of this object varies by event type and is documented in the sections below.
+</ResponseField>
+
+---
+
+## Event Categories
+
+<AccordionGroup>
+
+<Accordion title="Payment Events">
+
+Payment events track the full lifecycle of a RemitFlex payment from creation through final fiat delivery.
+
+| Event type | Trigger |
+|---|---|
+| `payment.created` | A new payment has been created. |
+| `payment.processing` | The payment is actively being settled on-chain. |
+| `payment.settled` | The stablecoin has settled on-chain. |
+| `payment.delivered` | Fiat has been confirmed received by the recipient. |
+| `payment.failed` | The payment could not be completed. |
+| `payment.cancelled` | The payment was cancelled before processing. |
+
+**`payment.created` example**
+
+```json
+{
+  "id": "evt_01HX9P5S...",
+  "type": "payment.created",
+  "created_at": "2024-01-15T10:00:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "created",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "recipient_id": "rec_01HX9K2B...",
+    "reference": "Invoice INV-2024-001",
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+**`payment.delivered` example**
+
+```json
+{
+  "id": "evt_01HX9Q7T...",
+  "type": "payment.delivered",
+  "created_at": "2024-01-15T14:30:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "delivered",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "converted_amount": 998.50,
+    "fee": 1.50,
+    "reference": "Invoice INV-2024-001",
+    "settled_at": "2024-01-15T13:45:00Z",
+    "delivered_at": "2024-01-15T14:28:00Z"
+  }
+}
+```
+
+**`payment.processing` example**
+
+```json
+{
+  "id": "evt_01HX9P9T...",
+  "type": "payment.processing",
+  "created_at": "2024-01-15T10:05:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "processing",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "recipient_id": "rec_01HX9K2B...",
+    "reference": "Invoice INV-2024-001",
+    "processing_started_at": "2024-01-15T10:04:47Z"
+  }
+}
+```
+
+**`payment.settled` example**
+
+```json
+{
+  "id": "evt_01HX9Q2S...",
+  "type": "payment.settled",
+  "created_at": "2024-01-15T13:50:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "settled",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "converted_amount": 998.50,
+    "fee": 1.50,
+    "reference": "Invoice INV-2024-001",
+    "settled_at": "2024-01-15T13:48:22Z"
+  }
+}
+```
+
+**`payment.failed` example**
+
+When a payment fails, the `data` object includes a `failure_reason` field with a machine-readable error code.
+
+```json
+{
+  "id": "evt_01HX9R8U...",
+  "type": "payment.failed",
+  "created_at": "2024-01-15T11:05:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "failed",
+    "failure_reason": "insufficient_liquidity",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "reference": "Invoice INV-2024-001",
+    "failed_at": "2024-01-15T11:04:52Z"
+  }
+}
+```
+
+**`payment.cancelled` example**
+
+```json
+{
+  "id": "evt_01HX9S1V...",
+  "type": "payment.cancelled",
+  "created_at": "2024-01-15T10:15:00Z",
+  "data": {
+    "payment_id": "pay_01HX9M3A...",
+    "status": "cancelled",
+    "amount": 1000,
+    "source_currency": "USDC",
+    "destination_currency": "USD",
+    "reference": "Invoice INV-2024-001",
+    "cancelled_at": "2024-01-15T10:14:33Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Conversion Events">
+
+Conversion events are emitted when RemitFlex executes a stablecoin-to-fiat (or stablecoin-to-stablecoin) conversion as part of a payment or off-ramp.
+
+| Event type | Trigger |
+|---|---|
+| `conversion.completed` | The conversion finished successfully. |
+| `conversion.failed` | The conversion could not be completed. |
+
+**`conversion.completed` example**
+
+The `data` object includes `conversion_id` and `converted_amount` so you can reconcile conversion outcomes against your records.
+
+```json
+{
+  "id": "evt_01HX9S9V...",
+  "type": "conversion.completed",
+  "created_at": "2024-01-15T12:00:00Z",
+  "data": {
+    "conversion_id": "cnv_01HX9L4C...",
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "input_amount": 2500,
+    "converted_amount": 2306.25,
+    "exchange_rate": 0.9225,
+    "fee": 6.25,
+    "completed_at": "2024-01-15T11:59:44Z"
+  }
+}
+```
+
+**`conversion.failed` example**
+
+```json
+{
+  "id": "evt_01HX9TAW...",
+  "type": "conversion.failed",
+  "created_at": "2024-01-15T12:03:00Z",
+  "data": {
+    "conversion_id": "cnv_01HX9L4C...",
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "input_amount": 2500,
+    "failure_reason": "rate_expired",
+    "failed_at": "2024-01-15T12:02:58Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Off-Ramp Events">
+
+Off-ramp events track stablecoin-to-fiat conversions and the subsequent bank transfer, from processing through confirmed bank receipt.
+
+| Event type | Trigger |
+|---|---|
+| `offramp.processing` | The off-ramp is being actively processed. |
+| `offramp.settled` | Conversion is complete and the bank transfer has been initiated. |
+| `offramp.delivered` | The destination bank has confirmed receipt of the funds. |
+| `offramp.failed` | The off-ramp failed at some stage. |
+
+**`offramp.processing` example**
+
+```json
+{
+  "id": "evt_01HX9T5W...",
+  "type": "offramp.processing",
+  "created_at": "2024-01-15T11:30:00Z",
+  "data": {
+    "offramp_id": "ofr_01HX9N4R...",
+    "status": "processing",
+    "amount": 2500,
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "bank_account": {
+      "account_holder_name": "Acme Corp GmbH",
+      "account_number": "DE89370400440532013000",
+      "bank_name": "Deutsche Bank",
+      "bank_country": "DE"
+    },
+    "reference": "Payout batch #42",
+    "processing_started_at": "2024-01-15T11:29:41Z"
+  }
+}
+```
+
+**`offramp.settled` example**
+
+```json
+{
+  "id": "evt_01HX9UBX...",
+  "type": "offramp.settled",
+  "created_at": "2024-01-15T13:00:00Z",
+  "data": {
+    "offramp_id": "ofr_01HX9N4R...",
+    "status": "settled",
+    "amount": 2500,
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "converted_amount": 2306.25,
+    "fee": 6.25,
+    "bank_account": {
+      "account_holder_name": "Acme Corp GmbH",
+      "account_number": "DE89370400440532013000",
+      "bank_name": "Deutsche Bank",
+      "bank_country": "DE"
+    },
+    "reference": "Payout batch #42",
+    "settled_at": "2024-01-15T12:58:30Z"
+  }
+}
+```
+
+**`offramp.delivered` example**
+
+```json
+{
+  "id": "evt_01HX9VCY...",
+  "type": "offramp.delivered",
+  "created_at": "2024-01-16T09:15:00Z",
+  "data": {
+    "offramp_id": "ofr_01HX9N4R...",
+    "status": "delivered",
+    "amount": 2500,
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "converted_amount": 2306.25,
+    "reference": "Payout batch #42",
+    "delivered_at": "2024-01-16T09:12:44Z"
+  }
+}
+```
+
+**`offramp.failed` example**
+
+```json
+{
+  "id": "evt_01HX9WDZ...",
+  "type": "offramp.failed",
+  "created_at": "2024-01-15T13:30:00Z",
+  "data": {
+    "offramp_id": "ofr_01HX9N4R...",
+    "status": "failed",
+    "failure_reason": "invalid_account_number",
+    "amount": 2500,
+    "source_currency": "USDC",
+    "destination_currency": "EUR",
+    "reference": "Payout batch #42",
+    "failed_at": "2024-01-15T13:29:17Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Compliance Events">
+
+Compliance events are emitted when RemitFlex's automated screening flags a transaction for review, or when a manual review reaches a conclusion. Subscribe to these events to pause downstream processing whenever a transaction is under review.
+
+| Event type | Trigger |
+|---|---|
+| `compliance.review_required` | A transaction has been flagged and requires manual compliance review. |
+| `compliance.approved` | A previously flagged transaction has been approved after review. |
+| `compliance.rejected` | A previously flagged transaction has been rejected after review. |
+
+**`compliance.review_required` example**
+
+The `data.review_id` identifies the compliance case. Hold any related payouts until you receive a `compliance.approved` or `compliance.rejected` event.
+
+```json
+{
+  "id": "evt_01HX9XEA...",
+  "type": "compliance.review_required",
+  "created_at": "2024-01-15T15:00:00Z",
+  "data": {
+    "review_id": "rev_01HX9O5D...",
+    "related_resource_type": "payment",
+    "related_resource_id": "pay_01HX9M3A...",
+    "reason": "high_value_transaction",
+    "flagged_at": "2024-01-15T14:59:51Z"
+  }
+}
+```
+
+**`compliance.approved` example**
+
+```json
+{
+  "id": "evt_01HX9YFB...",
+  "type": "compliance.approved",
+  "created_at": "2024-01-15T16:30:00Z",
+  "data": {
+    "review_id": "rev_01HX9O5D...",
+    "related_resource_type": "payment",
+    "related_resource_id": "pay_01HX9M3A...",
+    "reviewed_by": "compliance_team",
+    "approved_at": "2024-01-15T16:29:03Z"
+  }
+}
+```
+
+**`compliance.rejected` example**
+
+```json
+{
+  "id": "evt_01HX9ZGC...",
+  "type": "compliance.rejected",
+  "created_at": "2024-01-15T16:45:00Z",
+  "data": {
+    "review_id": "rev_01HX9O5D...",
+    "related_resource_type": "payment",
+    "related_resource_id": "pay_01HX9M3A...",
+    "rejection_reason": "sanctions_match",
+    "reviewed_by": "compliance_team",
+    "rejected_at": "2024-01-15T16:44:31Z"
+  }
+}
+```
+
+</Accordion>
+
+</AccordionGroup>

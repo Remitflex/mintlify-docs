@@ -1,0 +1,112 @@
+---
+title: "Configuring Sandbox and Live Environments in RemitFlex"
+sidebarTitle: "Environments"
+description: "Understand how RemitFlex's sandbox and live environments work, what separates them, and how to graduate from testing to production."
+---
+
+RemitFlex provides two isolated environments — **Sandbox** and **Live** — so you can build and validate your integration thoroughly before any real money changes hands. Switching between them requires nothing more than using the right API key and base URL; there is no separate SDK configuration, no feature flags, and no support ticket needed.
+
+## Environment URLs
+
+Each environment has its own dedicated base URL. All API requests must be sent to the URL that matches the key you are using.
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://sandbox.api.remitflex.com/v1` |
+| Live | `https://api.remitflex.com/v1` |
+
+<Warning>
+Never send a live API key to the sandbox URL, or a test key to the live URL. RemitFlex will reject the request with a `401 Unauthorized` error if the key prefix does not match the environment.
+</Warning>
+
+## API Key Prefixes
+
+Your API keys carry a prefix that identifies their environment at a glance.
+
+| Prefix | Environment | Example |
+|---|---|---|
+| `rf_test_` | Sandbox | `rf_test_4xKj9mNpQr...` |
+| `rf_live_` | Live | `rf_live_7vBz2wLsYt...` |
+
+You can generate and manage both sets of keys from the **RemitFlex Dashboard** under **Settings → API Keys**. Treat live keys as production secrets: store them in environment variables or a secrets manager, and never commit them to source control.
+
+<Tip>
+Use a `.env` file locally and configure your deployment platform (e.g., Vercel, Railway, AWS Secrets Manager) to inject the correct key at runtime. This way, your code never needs to change between environments — only the environment variable value does.
+</Tip>
+
+## Switching Environments
+
+Switching environments is intentionally simple. You only need to do two things:
+
+1. Use the correct API key for the target environment (`rf_test_...` or `rf_live_...`).
+2. Point your HTTP client at the matching base URL.
+
+No other configuration is required. Every endpoint, request shape, and response schema is identical across both environments.
+
+```bash
+# Sandbox request
+curl https://sandbox.api.remitflex.com/v1/payments \
+  -H "Authorization: Bearer rf_test_4xKj9mNpQr..."
+
+# Live request — same path, different key and host
+curl https://api.remitflex.com/v1/payments \
+  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+```
+
+## Dashboard Environment Toggle
+
+The RemitFlex Dashboard mirrors the same separation. A **Sandbox / Live toggle** appears in the top navigation bar. Switching it changes every view — payments, balances, webhooks, and logs — to show data for that environment only. Dashboard actions (like manually retrying a webhook) also execute in whichever environment is currently selected, so confirm the toggle before taking any action.
+
+## Sandbox Behavior
+
+The sandbox is a full-fidelity replica of the live environment. It is designed to let you exercise every part of your integration — including edge cases and failure scenarios — without moving real money.
+
+| Behavior | Sandbox | Live |
+|---|---|---|
+| Real funds move | ✗ No | ✓ Yes |
+| Starting balance | Pre-funded test balance | Real funded balance |
+| Settlement time | Simulated (seconds to minutes) | Actual network/bank timing |
+| Webhook events | Fire identically to live | Fire identically to sandbox |
+| KYC/KYB required | ✗ Not required | ✓ Required |
+| Sanctions screening | Simulated | Real-time screening |
+| Rate limits | Same as live | Same as sandbox |
+
+<Note>
+Webhook events in the sandbox fire with the same payloads, timing patterns, and retry logic as in production. This means you can build and validate your entire event-handling pipeline — including failure and retry scenarios — before going live.
+</Note>
+
+### Pre-funded Test Balances
+
+When your sandbox account is created, it is automatically credited with test balances across supported stablecoins and fiat currencies. If you exhaust a test balance during development, you can top it up instantly from **Dashboard → Sandbox → Test Balances → Add Funds**. These top-ups are instant and unlimited; they have no real-world cost or effect.
+
+### Simulating Specific Outcomes
+
+You can trigger specific payment outcomes in the sandbox by using reserved test amounts. For example, sending an amount ending in `.99` simulates a recipient bank rejection. Full details are in the [Testing guide](/guides/testing).
+
+---
+
+## Going Live Checklist
+
+Before you process your first real payment, complete each of the following steps in order. Skipping any step will result in rejected requests or failed compliance checks.
+
+<Steps>
+  <Step title="Complete KYC/KYB verification">
+    Log in to the RemitFlex Dashboard and navigate to **Settings → Verification**. Individual accounts require KYC; business accounts require KYB. Verification typically completes within one business day. You cannot generate live API keys until verification is approved.
+  </Step>
+  <Step title="Swap to your live API key">
+    Replace every instance of your `rf_test_...` key with the corresponding `rf_live_...` key. Do this in your secrets manager or environment variable configuration — not in source code. Confirm that no test keys remain in any production code path.
+  </Step>
+  <Step title="Update the base URL">
+    Change your HTTP client's base URL from `https://sandbox.api.remitflex.com/v1` to `https://api.remitflex.com/v1`. If your base URL is stored as an environment variable (recommended), update that variable in your production environment.
+  </Step>
+  <Step title="Send a small real payment first">
+    Before routing significant volume, send a low-value real payment end-to-end and confirm the full flow: payment creation, status transitions, and delivery. This validates your live credentials, balance funding, and any corridor-specific requirements in your target region.
+  </Step>
+  <Step title="Set up production webhook endpoints">
+    In **Dashboard → Live → Webhooks**, register your production webhook URL and subscribe to the event types your system handles. Verify that your endpoint returns `200 OK` within five seconds and that your signature verification logic uses your **live** webhook secret — not the sandbox secret.
+  </Step>
+</Steps>
+
+<Info>
+If your account is flagged for additional compliance review after going live, your live API key will still work for read operations (e.g., fetching payment status), but write operations will return `403 Forbidden` with code `COMPLIANCE_REVIEW` until the review is resolved. Contact [support@remitflex.com](mailto:support@remitflex.com) to expedite.
+</Info>
