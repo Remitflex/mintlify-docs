@@ -1,0 +1,107 @@
+---
+title: "Idempotency"
+sidebarTitle: "Idempotency"
+description: "Safely retry mutating API requests with Idempotency-Key headers."
+---
+
+Network timeouts and client retries can cause duplicate operations. RemitFlex idempotency lets you retry mutating requests safely when authenticated with an **API key**.
+
+## When idempotency is required
+
+| Auth method | Mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`) |
+|-------------|------------------------------------------------------|
+| API key | **Required** — include `Idempotency-Key` |
+| Dashboard JWT | Not required |
+
+## Header
+
+```
+Idempotency-Key: 7f3c2a1b-4e5d-6c7b-8a9f-0e1d2c3b4a5f
+```
+
+- Max length: **255 characters**
+- Use a fresh UUID (or similar unique string) per distinct operation
+- TTL: **24 hours** (configurable server-side via `IDEMPOTENCY_TTL_SECONDS`)
+
+## Behavior
+
+1. First request with a given key → processed normally; response cached in Redis.
+2. Retry with the **same** key, org, HTTP method, and path → cached response returned without re-executing.
+3. Different operation → use a **new** idempotency key.
+
+<Warning>
+  Reusing an idempotency key for a different request body returns the original response. Always generate a new key per operation.
+</Warning>
+
+## Example: create swap
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.remitflex.com/v1/swaps \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "USDC",
+    "to": "EURC",
+    "amount": 100,
+    "destinationAddress": "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB"
+  }'
+```
+
+```javascript JavaScript
+import { randomUUID } from "crypto";
+
+const res = await fetch("https://api.remitflex.com/v1/swaps", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.REMITFLEX_API_KEY}`,
+    "Idempotency-Key": randomUUID(),
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    from: "USDC",
+    to: "EURC",
+    amount: 100,
+    destinationAddress: "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB",
+  }),
+});
+```
+
+```python Python
+import os, uuid, requests
+
+requests.post(
+    "https://api.remitflex.com/v1/swaps",
+    headers={
+        "Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}",
+        "Idempotency-Key": str(uuid.uuid4()),
+    },
+    json={
+        "from": "USDC",
+        "to": "EURC",
+        "amount": 100,
+        "destinationAddress": "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB",
+    },
+)
+```
+
+</CodeGroup>
+
+## Endpoints that require idempotency (API key)
+
+All `POST` and `DELETE` endpoints in this reference, including:
+
+- `POST /swaps`, `POST /swaps/{id}/cancel`
+- `POST /customers`
+- `POST /payment-routes`, `POST /payment-routes/{id}/pause`, `POST /payment-routes/{id}/activate`, `POST /payment-routes/{id}/deposits/sync`, `DELETE /payment-routes/{id}`
+
+## Errors
+
+| Code | Message |
+|------|---------|
+| `400` | `Idempotency-Key header is required for mutating API requests` |
+| `422` | `Idempotency-Key must be 255 characters or fewer` |
+
+Failed requests are **not** cached — safe to retry with the same key after fixing the error.

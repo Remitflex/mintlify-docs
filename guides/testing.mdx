@@ -1,144 +1,89 @@
 ---
-title: "Safely Test Payments in the RemitFlex Sandbox Environment"
+title: "Testing your integration"
 sidebarTitle: "Testing"
-description: "Use sandbox API keys, pre-funded test wallets, and magic amounts to simulate every payment outcome before going live — no real money involved."
+description: "Use test API keys, local development, and the sandbox workflow to validate your RemitFlex integration."
 ---
 
-The RemitFlex sandbox is an isolated environment that mirrors the production API exactly, but no real funds move and no real bank transfers occur. Use it to build and validate your integration end-to-end before switching to live API keys.
+Test your integration with `rmf_test_` keys before switching to live keys for production.
 
-## Sandbox vs. live environment
+## Environment summary
 
-| | Sandbox | Live |
-|---|---|---|
-| **Base URL** | `https://sandbox.api.remitflex.com/v1` | `https://api.remitflex.com/v1` |
-| **API key prefix** | `rf_test_` | `rf_live_` |
-| **Real money moves** | No | Yes |
-| **KYB/KYC required** | No | Yes |
-| **Settlement speed** | Seconds | Minutes to days |
-| **Webhook delivery** | Yes (same as live) | Yes |
+| | Test | Live |
+|---|------|------|
+| **Key prefix** | `rmf_test_` | `rmf_live_` |
+| **Base URL** | `https://api.remitflex.com/v1` | `https://api.remitflex.com/v1` |
+| **Created in** | Dashboard → API Keys | Dashboard → API Keys |
 
 <Note>
-  Sandbox API keys (prefix `rf_test_`) can never initiate real-money transfers, even if pointed at the live base URL by mistake. The key prefix determines the environment — live keys only work with the live base URL.
+  Environment is encoded in the API key prefix. There is no separate sandbox hostname.
 </Note>
 
----
+## Local development
 
-## Get your sandbox API keys
+Run the API locally and point your client at it:
 
-<Steps>
+```bash
+export API_BASE="http://localhost:4000/v1"
+export REMITFLEX_API_KEY="rmf_test_YOUR_KEY"
+```
 
-### Open API key settings
+Create a test key in the dashboard with scopes: `fx:read`, `transfers:read`, `transfers:write`, and optionally `collections:read` / `collections:write`.
 
-In the RemitFlex dashboard, go to **Settings → API Keys**.
+## Test a rate lookup
 
-### Switch to the Sandbox tab
+```bash
+curl -s "$API_BASE/rates/USDC/EURC" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
+```
 
-Toggle the environment selector to **Sandbox** at the top of the page.
+## Test a swap (dry run flow)
 
-### Create a new key
-
-Click **Generate new key**, give it a descriptive name (e.g., `local-dev`), and copy the key immediately. It is shown only once.
-
-### Set your base URL
-
-Point your HTTP client at `https://sandbox.api.remitflex.com/v1` and use your `rf_test_` key in the `Authorization` header.
-
-</Steps>
-
----
-
-## Pre-funded test wallets
-
-Sandbox accounts come pre-loaded with test stablecoin balances so you can start making payments immediately:
-
-| Currency | Pre-funded amount |
-|---|---|
-| USDC | 1,000,000 |
-| USDT | 1,000,000 |
-| EURC | 1,000,000 |
-
-These are test tokens — they have no real value and cannot be withdrawn. If you exhaust your sandbox balance, top it up from **Dashboard → Sandbox → Fund wallet**.
-
----
-
-## Simulate specific payment outcomes
-
-The sandbox uses **magic amounts** to deterministically trigger different payment outcomes. Set the payment `amount` to a value ending in the decimal suffix shown below to force a particular result.
-
-<Tip>
-  Magic amounts let you reproduce every possible payment state in automated tests without waiting for real banking networks. Write test cases that cover each outcome to make your error handling and webhook logic bulletproof before going live.
-</Tip>
-
-| Amount ending in | Outcome | Status / Error |
-|---|---|---|
-| `.00` | Payment succeeds normally | `delivered` |
-| `.01` | Payment fails — insufficient funds | `failed` / `INSUFFICIENT_FUNDS` |
-| `.02` | Payment fails — recipient bank rejected | `failed` / `RECIPIENT_BANK_REJECTED` |
-| `.03` | Payment enters compliance review | `compliance_review` |
-| Exactly `9999.99` | Rate limit error triggered | HTTP 429 |
-
-**Example — trigger a recipient bank rejection:**
-
-```bash curl
-curl -X POST https://sandbox.api.remitflex.com/v1/payments \
-  -H "Authorization: Bearer rf_test_YOUR_SANDBOX_KEY" \
+```bash
+curl -s -X POST "$API_BASE/swaps" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
-    "quote_id": "qt_01HX9M2P4KZBN8VXQR7YWT3CD",
-    "amount": 500.02,
-    "currency": "USDC",
-    "destination_currency": "EUR",
-    "reference": "test-rejection",
-    "recipient": {
-      "name": "Test Recipient",
-      "account_number": "DE89370400440532013000",
-      "bank_code": "DEUTDEDB",
-      "bank_country": "DE"
-    }
-  }'
+    "from": "USDC",
+    "to": "EURC",
+    "amount": 1,
+    "destinationAddress": "YOUR_SOLANA_ADDRESS"
+  }' | jq .
 ```
 
-**Expected failure response:**
+Deposit USDC to the returned `depositAddress` before `expiresAt` to complete the swap on-chain.
 
-```json
-{
-  "id": "pmt_01HX4N3RKVZWP9QJDB6CTYMX8",
-  "status": "failed",
-  "failure_reason": "RECIPIENT_BANK_REJECTED",
-  "failure_message": "The recipient's bank declined to accept the transfer.",
-  "amount": 500.02,
-  "currency": "USDC"
-}
+## Test a payment route
+
+```bash
+# List supported chains
+curl -s "$API_BASE/payment-routes/chains" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
+
+# Create a route (requires collections:write)
+curl -s -X POST "$API_BASE/payment-routes" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test route",
+    "originChainId": 792703809,
+    "destinationChainId": 792703809,
+    "destinationCurrency": "0x...",
+    "destinationAddress": "0x..."
+  }' | jq .
 ```
 
----
+See [Payment routes](/api-reference/overview) in the API reference for full request fields.
 
-## Sandbox webhooks
+## Idempotency in tests
 
-Webhooks work identically in the sandbox and live environments. RemitFlex delivers events to your registered endpoint with the same payload structure and the same HMAC-SHA256 signature. Register a sandbox-specific endpoint in **Dashboard → Settings → Webhooks** and set the environment toggle to **Sandbox**.
+Always send `Idempotency-Key` on mutating requests when using API keys. Retrying with the same key returns the cached response — useful for simulating network failures in integration tests.
 
-<Tip>
-  Use a tool like [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) during local development to expose your localhost server as a public HTTPS URL for webhook delivery.
-</Tip>
-
----
-
-## Sandbox payment speed
-
-Sandbox payments skip real banking networks and complete in seconds rather than minutes or hours. This lets you run end-to-end integration tests quickly without waiting for settlement windows.
-
-| Step | Sandbox timing | Live timing |
-|---|---|---|
-| `pending` → `processing` | ~1 second | 10–30 seconds |
-| `processing` → `settled` | ~2 seconds | 1–15 minutes |
-| `settled` → `delivered` | ~2 seconds | Hours to days |
-
----
-
-## Environment isolation
-
-Sandbox data is fully isolated from production. Payments, conversions, off-ramps, and webhook events created with a sandbox key never appear in your live dashboard, and vice versa. Always use separate API keys for each environment and never mix `rf_test_` and `rf_live_` keys in the same configuration.
+## Security
 
 <Warning>
-  Do not log or commit live API keys (`rf_live_`) to version control. Use environment variables or a secrets manager. Sandbox keys (`rf_test_`) are safe to use in local development but should still be kept out of public repositories.
+  Do not log or commit live keys (`rmf_live_`) to version control. Test keys should also be kept out of public repositories.
 </Warning>
+
+Use separate keys per environment and per service. Revoke unused keys from the dashboard.

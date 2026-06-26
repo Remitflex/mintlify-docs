@@ -1,150 +1,114 @@
 ---
-title: "RemitFlex REST API Overview: Requests and Conventions"
+title: "API overview"
 sidebarTitle: "Overview"
-description: "Everything you need to start building with RemitFlex: base URLs, versioning, request and response formats, rate limits, and idempotency."
+description: "Base URLs, response format, rate limits, authentication, and idempotency for the RemitFlex REST API."
 ---
 
-The RemitFlex API is a RESTful HTTP API that lets you programmatically send payments, convert stablecoins, and off-ramp funds across borders. All communication happens over HTTPS, all request and response bodies are JSON, and every call is authenticated with a Bearer token tied to your API key. This page covers the foundational conventions that apply to every endpoint in the API.
+The RemitFlex API is a RESTful JSON API for Solana swaps (Jupiter), cross-chain payment routes (Relay), exchange rates, customers, and a unified transaction ledger.
 
 ## Base URLs
 
-RemitFlex provides two environments. Use the **sandbox** environment while you build and test — it mirrors production behavior without moving real funds. Switch to the **live** environment when you are ready to go to production.
-
 | Environment | Base URL |
-|---|---|
-| Live | `https://api.remitflex.com/v1` |
-| Sandbox | `https://sandbox.api.remitflex.com/v1` |
+|-------------|----------|
+| Production | `https://api.remitflex.com/v1` |
+| Local | `http://localhost:4000/v1` |
 
 <Note>
-  Sandbox API keys begin with `rf_test_` and live keys begin with `rf_live_`. The two prefixes are mutually exclusive — a test key will be rejected by the live base URL and vice versa.
+  Test keys use the `rmf_test_` prefix; live keys use `rmf_live_`. Both work against the same base URL — environment is encoded in the key, not the hostname.
 </Note>
 
 ## Versioning
 
-The current API version is **v1**, encoded directly in the URL path (e.g. `https://api.remitflex.com/v1/payments`). When RemitFlex introduces breaking changes, a new version will be released under a new path prefix. You will receive advance notice before any existing version is deprecated.
+All routes are prefixed with `/v1`. Breaking changes will ship under a new version path with advance notice.
 
 ## HTTPS
 
-All API requests must use HTTPS. Plain HTTP requests are rejected at the network edge and will not reach RemitFlex servers.
+Production requests must use HTTPS. Plain HTTP is only appropriate for local development.
 
-## Request Format
+## Request format
 
-Send all request bodies as JSON and include the `Content-Type: application/json` header on every `POST`, `PUT`, and `PATCH` request. Query parameters are used for filtering, sorting, and pagination on `GET` requests.
+Send JSON bodies with `Content-Type: application/json` on `POST` requests.
 
 ```bash
-curl -X POST https://api.remitflex.com/v1/payments \
-  -H "Authorization: Bearer rf_live_xxxx" \
+curl -X POST https://api.remitflex.com/v1/swaps \
+  -H "Authorization: Bearer rmf_test_xxxx" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
-  -d '{"amount": 100, "currency": "USDC", "destination": "acc_xxxx"}'
+  -d '{"from":"USDC","to":"EURC","amount":100,"destinationAddress":"..."}'
 ```
 
-## Response Format
+## Response format
 
-All responses are JSON. A successful response returns the requested resource object (or a paginated list object) directly at the top level. There is no wrapping `status` or `success` field on success.
+All responses use a consistent envelope.
 
-**Successful single-resource response:**
+**Success (2xx):**
+
 ```json
 {
-  "id": "pay_01HX4K9...",
-  "status": "completed",
-  "amount": 100,
-  "currency": "USDC"
+  "status": "success",
+  "message": "Swap created. Deposit to the address provided.",
+  "data": { }
 }
 ```
 
-**Successful list response:**
+**Error (4xx / 5xx):**
+
 ```json
 {
-  "data": [...],
-  "pagination": {
-    "cursor": "cur_next_xxxx",
-    "has_more": true,
-    "total": 142
-  }
+  "status": "error",
+  "message": "Swap not found"
 }
 ```
 
-**Error response:**
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "The 'amount' field must be greater than zero.",
-    "field": "amount"
-  }
-}
-```
-
-The `field` property is present when the error is attributable to a specific request parameter and omitted otherwise.
+Validation errors (`422`) include an `errors` object with per-field Zod messages.
 
 ## Authentication
 
-Every request must include your API key in the `Authorization` header as a Bearer token:
+Business endpoints accept either:
 
-```
-Authorization: Bearer rf_live_xxxx
-```
+| Method | Header | Notes |
+|--------|--------|-------|
+| API key | `Authorization: Bearer rmf_live_…` | Scoped; idempotency required on writes |
+| Dashboard JWT | `Authorization: Bearer eyJ…` | Full access; no idempotency required |
 
-See the [Authentication](/api-reference/authentication) page for key types, scopes, and error codes.
-
-## Rate Limits
-
-RemitFlex enforces rate limits per API key to ensure fair usage and platform stability.
-
-| Limit type | Value |
-|---|---|
-| Default | 100 requests per minute |
-| Burst | 20 requests per second |
-
-Every API response includes the following headers so you can monitor your current usage:
-
-| Header | Description |
-|---|---|
-| `X-RateLimit-Limit` | Maximum number of requests allowed in the current window |
-| `X-RateLimit-Remaining` | Number of requests remaining in the current window |
-| `X-RateLimit-Reset` | Unix timestamp (seconds) at which the current window resets |
-
-When you exceed the rate limit, the API returns a `429 Too Many Requests` response. Back off and retry after the timestamp in `X-RateLimit-Reset`.
-
-<Tip>
-  For high-throughput workloads, batch operations where possible and distribute requests evenly rather than sending in bursts. Contact RemitFlex support if your use case requires a higher limit.
-</Tip>
+See [Authentication](/api-reference/authentication).
 
 ## Idempotency
 
-Network failures can leave you uncertain whether a request was processed. To safely retry `POST` requests without risking duplicate operations, include an `Idempotency-Key` header set to a unique UUID:
+API-key mutating requests require `Idempotency-Key`. See [Idempotency](/api-reference/idempotency).
 
-```
-Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
-```
+## Rate limits
 
-RemitFlex stores the result of the first request for that key and returns the cached response for any subsequent retries with the same key. Idempotency keys expire after 24 hours.
+Global limit: **200 requests per 15 minutes** per IP. Auth endpoints have a stricter limit of **20 per 15 minutes**.
 
-<Warning>
-  Idempotency keys are scoped to your API key. Use a fresh UUID for each distinct operation — reusing a key for a genuinely different request will return the original response instead of processing the new one.
-</Warning>
+When exceeded, the API returns `429 Too Many Requests`.
 
-## Pagination
+## Health check
 
-List endpoints return paginated results using cursor-based pagination. Pass the `cursor` value from a response into the next request to retrieve the following page. See the [Pagination](/api-reference/pagination) page for full details and a worked example.
-
-## Minimal Example
-
-The following example fetches your most recent payments and shows a typical paginated response.
-
-```bash
-curl -X GET https://api.remitflex.com/v1/payments \
-  -H "Authorization: Bearer rf_live_xxxx" \
-  -H "Content-Type: application/json"
-```
+`GET /health` (no `/v1` prefix, no auth):
 
 ```json
 {
-  "data": [...],
-  "pagination": {
-    "cursor": "cur_next_xxxx",
-    "has_more": true,
-    "total": 142
-  }
+  "status": "ok",
+  "env": "development",
+  "ts": "2026-06-26T12:00:00.000Z"
 }
 ```
+
+## Available resources
+
+| Resource | Description |
+|----------|-------------|
+| Rates | Cached Jupiter FX rates — `GET /rates` |
+| Swaps | Solana token swaps — `GET/POST /swaps` |
+| Payment routes | Cross-chain collection via Relay — `GET/POST /payment-routes` |
+| Customers | Organisation customers — `GET/POST /customers` |
+| Transactions | Unified swap + payment-route ledger — `GET /transactions` |
+
+Browse the **API Reference** tab in the sidebar for interactive endpoint documentation and the API playground.
+
+## JWT-only routes (not in API reference)
+
+- `/v1/auth/*` — dashboard login and signup
+- `/v1/api-keys/*` — key management
+- `/v1/admin/ops/*` — internal operations

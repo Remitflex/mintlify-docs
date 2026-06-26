@@ -12,6 +12,19 @@
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
+  "api": {
+    "openapi": "openapi.yaml",
+    "playground": {
+      "display": "interactive",
+      "proxy": true
+    },
+    "examples": {
+      "languages": ["bash", "javascript", "python"],
+      "defaults": "required",
+      "prefill": false,
+      "autogenerate": true
+    }
+  },
   "navbar": {
     "links": [
       {
@@ -69,43 +82,62 @@
       },
       {
         "tab": "API Reference",
+        "openapi": "openapi.yaml",
         "groups": [
           {
             "group": "Overview",
             "pages": [
               "api-reference/overview",
               "api-reference/authentication",
+              "api-reference/idempotency",
               "api-reference/pagination"
             ]
           },
           {
-            "group": "Payments",
+            "group": "Rates",
             "pages": [
-              "api-reference/payments/create",
-              "api-reference/payments/get",
-              "api-reference/payments/list",
-              "api-reference/payments/cancel"
+              "GET /rates",
+              "GET /rates/currencies",
+              "GET /rates/{from}/{to}"
             ]
           },
           {
-            "group": "Conversions",
+            "group": "Swaps",
             "pages": [
-              "api-reference/conversions/quote",
-              "api-reference/conversions/execute"
+              "GET /swaps",
+              "POST /swaps",
+              "GET /swaps/{id}",
+              "POST /swaps/{id}/cancel"
             ]
           },
           {
-            "group": "Off-Ramp",
+            "group": "Payment routes",
             "pages": [
-              "api-reference/offramp/initiate",
-              "api-reference/offramp/status"
+              "GET /payment-routes/chains",
+              "GET /payment-routes/corridors",
+              "GET /payment-routes/currencies",
+              "GET /payment-routes",
+              "POST /payment-routes",
+              "GET /payment-routes/deposits",
+              "GET /payment-routes/{id}",
+              "GET /payment-routes/{id}/deposits",
+              "POST /payment-routes/{id}/deposits/sync",
+              "POST /payment-routes/{id}/pause",
+              "POST /payment-routes/{id}/activate",
+              "DELETE /payment-routes/{id}"
             ]
           },
           {
-            "group": "Webhooks",
+            "group": "Customers",
             "pages": [
-              "api-reference/webhooks/events",
-              "api-reference/webhooks/verify"
+              "GET /customers",
+              "POST /customers"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "GET /transactions"
             ]
           }
         ]

@@ -115,7 +115,7 @@ Because RemitFlex adds new currencies and corridors on a rolling basis, the auth
 
 ```bash
 curl https://api.remitflex.com/v1/currencies \
-  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+  -H "Authorization: Bearer rmf_live_7vBz2wLsYt..."
 ```
 
 **Example response (truncated):**
@@ -158,11 +158,11 @@ You can also filter by type using the `type` query parameter:
 ```bash
 # Only stablecoins
 curl https://api.remitflex.com/v1/currencies?type=stablecoin \
-  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+  -H "Authorization: Bearer rmf_live_7vBz2wLsYt..."
 
 # Only fiat
 curl https://api.remitflex.com/v1/currencies?type=fiat \
-  -H "Authorization: Bearer rf_live_7vBz2wLsYt..."
+  -H "Authorization: Bearer rmf_live_7vBz2wLsYt..."
 ```
 
 <Info>

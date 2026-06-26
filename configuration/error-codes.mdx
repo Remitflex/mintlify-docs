@@ -1,266 +1,121 @@
 ---
-title: "RemitFlex Error Codes, HTTP Statuses, and Retry Logic"
-sidebarTitle: "Error Codes"
-description: "Complete reference for every RemitFlex API error code, HTTP status, retry strategy, and idempotency pattern to build resilient payment integrations."
+title: "Error codes and HTTP statuses"
+sidebarTitle: "Error codes"
+description: "RemitFlex API error response format, HTTP status codes, and retry guidance."
 ---
 
-Every RemitFlex API error returns a structured JSON body alongside an HTTP status code. Understanding the shape of that response — and knowing which errors are safe to retry versus which require human intervention — lets you build payment flows that degrade gracefully and recover automatically when things go wrong.
+All API errors return a JSON envelope with an HTTP status code.
 
----
-
-## Error Response Structure
-
-All errors follow a consistent envelope regardless of the HTTP status code. This makes it straightforward to write a single error-handling function in your integration layer.
+## Error response structure
 
 ```json
 {
-  "error": {
-    "code": "INVALID_RECIPIENT",
-    "message": "The recipient bank account number is invalid for the specified destination country.",
-    "field": "recipient.account_number",
-    "docs_url": "https://docs.remitflex.com/configuration/error-codes"
-  }
+  "status": "error",
+  "message": "Swap not found"
 }
 ```
 
-| Field | Type | Description |
-|---|---|---|
-| `code` | `string` | Machine-readable error identifier. Use this in your error-handling logic. |
-| `message` | `string` | Human-readable explanation. Surface this in logs and support tickets, not in end-user UI. |
-| `field` | `string \| null` | The request field that caused the error, using dot notation. Present only for validation errors. |
-| `docs_url` | `string` | Direct link to this page for the relevant error category. |
+Validation errors (`422`) include an `errors` object with per-field messages from Zod:
+
+```json
+{
+  "status": "error",
+  "message": "Validation failed",
+  "errors": {
+    "amount": "Amount must be greater than zero"
+  }
+}
+```
 
 <Tip>
-Always branch your error-handling logic on `error.code`, not on `error.message`. The message text may change between API versions; the code is a stable, versioned identifier.
+  Branch error-handling logic on HTTP status and `message` strings. Validation errors should inspect the `errors` object.
 </Tip>
 
----
+## HTTP status codes
 
-## HTTP Status Codes
+| Status | Meaning | Retry? |
+|--------|---------|--------|
+| `400` | Bad request (e.g. missing `Idempotency-Key`) | Fix request, then retry |
+| `401` | Invalid or missing auth token/key | Fix credentials |
+| `403` | Forbidden (missing scope, suspended org) | Fix scopes or contact support |
+| `404` | Resource not found | Do not retry |
+| `409` | Conflict (e.g. swap cannot be cancelled) | Do not retry same operation |
+| `422` | Validation or business rule failure | Fix input, then retry |
+| `429` | Rate limit exceeded | Retry with backoff |
+| `500` | Server error | Retry with exponential backoff |
+| `503` | Service unavailable (e.g. rate not cached yet) | Retry shortly |
 
-RemitFlex uses a standard subset of HTTP status codes. Each maps to a category of problem with a distinct resolution path.
+## Common messages
 
-| Status | Meaning | Typical cause |
-|---|---|---|
-| `400 Bad Request` | Validation error | Malformed request body or invalid field value |
-| `401 Unauthorized` | Authentication failure | Missing, expired, or malformed API key |
-| `402 Payment Required` | Insufficient funds or limit | Account balance too low or payment cap exceeded |
-| `403 Forbidden` | Action not permitted | Account tier, permission scope, or compliance block |
-| `404 Not Found` | Resource missing | Invalid payment ID, quote ID, or recipient ID |
-| `409 Conflict` | Duplicate request | Idempotency key already associated with a completed request |
-| `422 Unprocessable Entity` | Business logic error | Corridor unavailable, quote expired, or unsupported flow |
-| `429 Too Many Requests` | Rate limit exceeded | Request volume exceeded your account's rate limit |
-| `500 Internal Server Error` | RemitFlex server fault | Transient infrastructure issue; safe to retry with backoff |
+### Authentication
 
----
+| HTTP | Message | Resolution |
+|------|---------|------------|
+| `401` | `No token provided` | Add `Authorization: Bearer ...` header |
+| `401` | `Invalid API key` | Check key value and prefix (`rmf_test_` / `rmf_live_`) |
+| `401` | `Token invalid or expired` | Refresh dashboard JWT or use a valid API key |
+| `403` | `Missing required scopes: transfers:write` | Create a key with the required scopes |
 
-## Error Code Reference
+### Idempotency
 
-The sections below group every error code by category. Each entry includes the HTTP status it accompanies, a description of the root cause, and the recommended resolution.
+| HTTP | Message | Resolution |
+|------|---------|------------|
+| `400` | `Idempotency-Key header is required for mutating API requests` | Add `Idempotency-Key` header on POST/DELETE |
+| `422` | `Idempotency-Key must be 255 characters or fewer` | Use a shorter unique key |
 
-<AccordionGroup>
-  <Accordion title="Authentication Errors">
-    Authentication errors indicate a problem with how your request is identifying itself to the API. These are almost always configuration issues rather than transient faults, so retrying without fixing the root cause will not help.
+### Swaps
 
-    | Code | HTTP Status | Description | Resolution |
-    |---|---|---|---|
-    | `UNAUTHORIZED` | `401` | The `Authorization` header is missing, malformed, or contains an invalid API key. | Verify the key is correctly formatted as `Bearer rf_test_...` or `Bearer rf_live_...` and that no characters were truncated. |
-    | `API_KEY_REVOKED` | `401` | The API key was explicitly revoked from the Dashboard or via the API Keys management endpoint. | Generate a new key under **Settings → API Keys** and update your environment configuration. |
-    | `INSUFFICIENT_PERMISSIONS` | `403` | The API key is valid but does not have the scope required to perform this action (e.g., a read-only key attempting to create a payment). | Issue a new key with the appropriate permission scopes, or contact your account administrator. |
+| HTTP | Message | Resolution |
+|------|---------|------------|
+| `422` | `Swap pair USDC/XYZ is not supported` | Check `GET /rates/currencies` for valid pairs |
+| `503` | `Rate for USDC/EURC is not available yet` | Wait and retry |
+| `409` | `Only pending swaps can be cancelled` | Swap is past `awaiting_deposit` |
+| `404` | `Swap not found` | Verify swap ID and org |
 
-    <Note>
-    RemitFlex API keys do not expire on a time basis, but they are invalidated immediately if revoked. If you rotate keys as part of your security policy, ensure your deployment pipeline updates the key atomically to avoid `UNAUTHORIZED` errors during the rotation window.
-    </Note>
-  </Accordion>
+### Payment routes
 
-  <Accordion title="Payment Errors">
-    Payment errors arise during the creation, processing, or delivery of a payment or conversion. Some are recoverable by correcting input; others indicate a terminal state for that specific payment attempt.
+| HTTP | Message | Resolution |
+|------|---------|------------|
+| `404` | `Payment route not found` | Verify route ID |
+| `422` | Relay or corridor validation errors | Check chain IDs and currency addresses |
 
-    | Code | HTTP Status | Description | Resolution |
-    |---|---|---|---|
-    | `INVALID_AMOUNT` | `400` | The requested amount is below the corridor minimum or above the corridor maximum. | Query `GET /corridors/{id}` for the current min/max limits and adjust the amount accordingly. |
-    | `INVALID_CURRENCY` | `400` | The currency code is not recognized or is not supported in the requested direction. | Check the [Supported Currencies](/configuration/supported-currencies) page and ensure you are using the correct uppercase symbol or ISO 4217 code. |
-    | `INVALID_RECIPIENT` | `400` | One or more recipient fields — such as bank account number, routing number, or mobile wallet ID — are invalid for the destination country. | Re-validate recipient details against the field requirements in `GET /corridors/{id}/recipient-fields`. |
-    | `CORRIDOR_UNAVAILABLE` | `422` | The source-to-destination corridor is not currently active. This may be a temporary suspension or a permanently unsupported route. | Check the [RemitFlex Status Page](https://status.remitflex.com) for corridor outages. If the corridor should be supported, contact support. |
-    | `QUOTE_EXPIRED` | `422` | The conversion quote referenced by `quote_id` has passed its validity window (typically 30 seconds). | Fetch a fresh quote via `POST /quotes` and use the new `quote_id` in your payment request. |
-    | `INSUFFICIENT_FUNDS` | `402` | Your RemitFlex wallet balance for the source currency is too low to cover the payment amount plus fees. | Top up your balance via the Dashboard or the `POST /funding` endpoint, then retry the request. |
-    | `PAYMENT_CANCELLED` | `409` | The payment was previously cancelled and cannot be resubmitted with the same ID. | Create a new payment with a new `Idempotency-Key` if you still need to complete the transfer. |
-    | `RECIPIENT_BANK_REJECTED` | `422` | The recipient's bank returned a rejection after RemitFlex submitted the payout. This is terminal for the payment. | Contact the recipient to verify their account details, then create a new payment with corrected recipient information. |
+## Rate limits
 
-    <Tip>
-    `QUOTE_EXPIRED` is one of the most common errors in production integrations. Design your checkout or confirmation flow to re-fetch a quote immediately before the user confirms payment — not at page load — to minimize the window in which expiry can occur.
-    </Tip>
-  </Accordion>
+Global: **200 requests per 15 minutes**. Auth endpoints: **20 per 15 minutes**.
 
-  <Accordion title="Compliance Errors">
-    Compliance errors are raised by RemitFlex's real-time sanctions screening, KYC/KYB verification checks, and transaction limit enforcement. These errors are **not** safe to retry without first resolving the underlying compliance issue.
+On `429`, back off and retry. There is no `X-RateLimit-*` header today.
 
-    | Code | HTTP Status | Description | Resolution |
-    |---|---|---|---|
-    | `KYC_REQUIRED` | `403` | The sending user has not completed identity verification. This is required before any payment can be initiated. | Direct the user to your KYC flow. RemitFlex provides a hosted verification link via `POST /kyc/sessions`. |
-    | `KYB_REQUIRED` | `403` | The transaction size or destination requires business verification (KYB) that has not been completed for this account. | Complete KYB from **Dashboard → Settings → Verification** or via the KYB API. |
-    | `LIMIT_EXCEEDED` | `402` | The transaction would cause the account's daily or monthly volume limit to be exceeded. | Wait until the limit resets (limits reset at 00:00 UTC), or contact your account manager to request a limit increase. |
-    | `COMPLIANCE_REVIEW` | `403` | The transaction has been flagged for manual compliance review and cannot be processed automatically. | This review typically completes within one to two business days. You will receive a webhook event (`compliance.review.completed`) when it resolves. |
+## Idempotency and retries
 
-    <Warning>
-    **`SANCTIONS_MATCH` — HTTP `403`**
+When using API keys, mutating requests require `Idempotency-Key`. Retrying with the **same** key returns the cached success response — safe for network failures.
 
-    This error means the transaction, recipient, or counterparty has been flagged by RemitFlex's real-time OFAC, EU, or UN sanctions screening engine. The payment is blocked and **cannot be retried**. Do not attempt to re-submit the transaction under any circumstances. Contact [compliance@remitflex.com](mailto:compliance@remitflex.com) immediately with the full error response and your payment reference. Attempting to circumvent sanctions screening may violate applicable law.
-    </Warning>
-  </Accordion>
-
-  <Accordion title="Rate Limit Errors">
-    RemitFlex enforces per-key rate limits to protect platform stability. Rate limit errors are always transient — the correct response is to slow down and retry after the window resets.
-
-    | Code | HTTP Status | Description | Resolution |
-    |---|---|---|---|
-    | `RATE_LIMIT_EXCEEDED` | `429` | Your API key has exceeded the allowed number of requests within the current time window. | Check the `Retry-After` response header for the number of seconds to wait before sending the next request. Implement exponential backoff for sustained high-volume flows. |
-
-    The `429` response includes headers to help you manage pacing:
-
-    ```
-    X-RateLimit-Limit: 300
-    X-RateLimit-Remaining: 0
-    X-RateLimit-Reset: 1714000860
-    Retry-After: 42
-    ```
-
-    | Header | Description |
-    |---|---|
-    | `X-RateLimit-Limit` | Maximum requests allowed per minute for this key |
-    | `X-RateLimit-Remaining` | Requests remaining in the current window |
-    | `X-RateLimit-Reset` | Unix timestamp at which the window resets |
-    | `Retry-After` | Seconds to wait before retrying |
-
-    <Info>
-    Default rate limits are 300 requests per minute for live keys and 60 requests per minute for sandbox keys. Enterprise accounts have elevated limits configured on their contract. Contact your account manager if your use case requires higher throughput.
-    </Info>
-  </Accordion>
-</AccordionGroup>
-
----
-
-## Idempotency
-
-RemitFlex supports idempotent requests for all state-mutating endpoints (`POST`, `PATCH`, `DELETE`). Idempotency lets you safely retry a request — for example, after a network timeout — without risking duplicate payments or double charges.
-
-To use idempotency, include a unique `Idempotency-Key` header on every mutating request:
+Use a **new** idempotency key for each distinct operation.
 
 ```bash
-curl https://api.remitflex.com/v1/payments \
-  -X POST \
-  -H "Authorization: Bearer rf_live_7vBz2wLsYt..." \
-  -H "Idempotency-Key: pay_idem_01HX9K3Z4P8QRVT6WNMJB5DFA" \
+curl -X POST https://api.remitflex.com/v1/swaps \
+  -H "Authorization: Bearer rmf_test_xxxx" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
-  -d '{
-    "source_currency": "USDC",
-    "destination_currency": "PHP",
-    "amount": "200.00",
-    "quote_id": "qt_01HX9K3Z4P8QRVT6WNMJB5DFA"
-  }'
+  -d '{"from":"USDC","to":"EURC","amount":10,"destinationAddress":"..."}'
 ```
 
-**Key rules for idempotency keys:**
+## Example error handler (JavaScript)
 
-- Generate a new, unique key for each *intended* payment. A UUID v4 or ULID is a reliable choice.
-- Reuse the *same* key when retrying a request that received no response or a `5xx` error.
-- Idempotency keys are scoped to your API key and expire after **24 hours**.
-- If you reuse a key with a *different request body*, RemitFlex returns `409 Conflict` with code `PAYMENT_CANCELLED` to protect against accidental misuse.
+```javascript
+async function apiRequest(url, options) {
+  const res = await fetch(url, options);
+  const body = await res.json();
 
-<Note>
-If a request with a given idempotency key is still being processed (e.g., the original request is in flight), subsequent requests with the same key will return `409 Conflict`. Poll `GET /payments/{id}` for the status of the in-flight payment rather than retrying the creation request.
-</Note>
-
----
-
-## Retry Strategy
-
-Not all errors are worth retrying. Retrying a permanent error wastes resources and delays detecting a configuration problem. Use this table to decide whether to retry, fix and retry, or escalate.
-
-| Error type | Examples | Retryable? | Recommended action |
-|---|---|---|---|
-| **Transient server fault** | `500 Internal Server Error` | ✅ Yes | Retry with exponential backoff: 1s → 2s → 4s → 8s (max 3 attempts) |
-| **Rate limit** | `RATE_LIMIT_EXCEEDED` | ✅ Yes | Wait for `Retry-After` seconds, then retry |
-| **Quote expired** | `QUOTE_EXPIRED` | ✅ Yes | Re-fetch a new quote, then retry the payment |
-| **Insufficient funds** | `INSUFFICIENT_FUNDS` | ✅ After fix | Top up balance, then retry |
-| **Validation error** | `INVALID_AMOUNT`, `INVALID_RECIPIENT` | ✅ After fix | Correct the offending field(s), then retry |
-| **Authentication** | `UNAUTHORIZED`, `API_KEY_REVOKED` | ❌ No | Fix credentials configuration; retrying will continue to fail |
-| **Compliance block** | `SANCTIONS_MATCH`, `KYC_REQUIRED` | ❌ No | Resolve compliance issue through the appropriate channel |
-| **Terminal payment state** | `PAYMENT_CANCELLED`, `RECIPIENT_BANK_REJECTED` | ❌ No | Create a new payment; the original cannot be resumed |
-| **Corridor unavailable** | `CORRIDOR_UNAVAILABLE` | ⚠️ Sometimes | Check status page; retry only after corridor is confirmed restored |
-
-### Exponential Backoff Example
-
-<CodeGroup>
-```javascript Node.js
-async function createPaymentWithRetry(payload, idempotencyKey, maxAttempts = 3) {
-  const RETRYABLE_STATUSES = [500, 503];
-  let delay = 1000; // start at 1 second
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const response = await fetch("https://api.remitflex.com/v1/payments", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.REMITFLEX_API_KEY}`,
-        "Idempotency-Key": idempotencyKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (response.ok) return response.json();
-
-    const error = await response.json();
-
-    if (!RETRYABLE_STATUSES.includes(response.status)) {
-      // Permanent error — surface immediately, do not retry
-      throw new Error(`Non-retryable error: ${error.error.code}`);
+  if (body.status === "error") {
+    if (res.status === 429) {
+      // backoff and retry
     }
-
-    if (attempt === maxAttempts) {
-      throw new Error(`Max retries exceeded. Last error: ${error.error.code}`);
+    if (res.status === 422 && body.errors) {
+      // surface field errors to user
     }
-
-    console.warn(`Attempt ${attempt} failed (${error.error.code}). Retrying in ${delay}ms...`);
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    delay *= 2; // exponential backoff
+    throw new Error(body.message);
   }
+
+  return body.data;
 }
 ```
-
-```python Python
-import time
-import requests
-import os
-
-def create_payment_with_retry(payload, idempotency_key, max_attempts=3):
-    RETRYABLE_STATUSES = {500, 503}
-    delay = 1.0  # start at 1 second
-
-    for attempt in range(1, max_attempts + 1):
-        response = requests.post(
-            "https://api.remitflex.com/v1/payments",
-            headers={
-                "Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}",
-                "Idempotency-Key": idempotency_key,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-        )
-
-        if response.ok:
-            return response.json()
-
-        error = response.json()
-
-        if response.status_code not in RETRYABLE_STATUSES:
-            raise Exception(f"Non-retryable error: {error['error']['code']}")
-
-        if attempt == max_attempts:
-            raise Exception(f"Max retries exceeded. Last error: {error['error']['code']}")
-
-        print(f"Attempt {attempt} failed ({error['error']['code']}). Retrying in {delay}s...")
-        time.sleep(delay)
-        delay *= 2  # exponential backoff
-```
-</CodeGroup>

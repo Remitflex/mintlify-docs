@@ -1,63 +1,76 @@
 ---
-title: "RemitFlex: Global Payments, Powered by Stablecoins"
+title: "RemitFlex: stablecoin payments API"
 sidebarTitle: "Introduction"
-description: "Move money globally with a single REST API — pay, convert, and off-ramp stablecoins across 50+ country corridors with compliant infrastructure."
+description: "Solana swaps via Jupiter, cross-chain payment routes via Relay, and a unified transaction ledger — all behind one REST API."
 ---
 
-RemitFlex is a stablecoin payment orchestration platform built for businesses that move money globally. Whether you're paying international suppliers, disbursing funds to remote workers, or settling cross-border invoices, RemitFlex gives you a single REST API to pay, convert, and off-ramp stablecoins seamlessly — backed by compliant infrastructure that handles the complexity of international corridors for you.
+RemitFlex is a stablecoin payments API for businesses that need programmatic access to swaps and cross-chain collection. Deposit stablecoins on Solana or across Relay corridors; RemitFlex handles routing, settlement, and ledgering.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Go from zero to your first successful payment in minutes. Get your API key and make your first call.
+    Create an API key and run your first swap in minutes.
   </Card>
   <Card title="Authentication" icon="key" href="/authentication">
-    Learn how to generate API keys, use Bearer tokens, and keep your credentials secure.
+    API keys, scopes, Bearer tokens, and idempotency.
   </Card>
-  <Card title="Payment Flows" icon="arrows-rotate" href="/concepts/payment-flows">
-    Understand how RemitFlex orchestrates conversions, routing, and off-ramp settlement end to end.
+  <Card title="Payment flows" icon="arrows-rotate" href="/concepts/payment-flows">
+    How swaps and payment routes work end to end.
   </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/overview">
-    Explore the full REST API — every endpoint, parameter, and response schema documented.
+  <Card title="API reference" icon="code" href="/api-reference/overview">
+    Interactive docs and playground for every endpoint.
   </Card>
 </CardGroup>
+
+## What you can do today
+
+| Capability | API | Provider |
+|------------|-----|----------|
+| **Solana swaps** | `POST /v1/swaps` | Jupiter |
+| **Cross-chain collection** | `POST /v1/payment-routes` | Relay |
+| **FX rates** | `GET /v1/rates` | Jupiter (cached) |
+| **Transaction ledger** | `GET /v1/transactions` | RemitFlex |
+| **Customers** | `GET/POST /v1/customers` | RemitFlex |
+
+<Note>
+  Bank off-ramp and outbound merchant webhooks are planned but **not yet available** in the API. See [Off-ramp](/guides/off-ramp) and [Webhooks](/guides/webhooks) for the roadmap.
+</Note>
 
 ## Why RemitFlex
 
-RemitFlex removes the friction that makes cross-border payments slow and expensive. You send stablecoins; your recipients receive local currency in their bank accounts. RemitFlex handles the conversion, routing, compliance checks, and settlement in between.
-
 <CardGroup cols={3}>
-  <Card title="Global Corridors" icon="globe" href="/concepts/corridors">
-    Send payments across 50+ country corridors with competitive FX rates and predictable fees — no hidden costs.
+  <Card title="Solana swaps" icon="arrows-rotate" href="/guides/currency-conversion">
+    Convert USDC, EURC, and other supported pairs on Solana with deposit-address flows.
   </Card>
-  <Card title="Compliant by Default" icon="shield-check" href="/concepts/compliance">
-    Built-in KYC/AML screening, sanctions list checks, and audit-ready transaction logs keep every payment compliant.
+  <Card title="Payment routes" icon="globe" href="/guides/send-payment">
+    Collect on one chain, deliver on another via Relay corridors.
   </Card>
-  <Card title="Webhook-Driven" icon="webhook" href="/guides/webhooks">
-    Subscribe to real-time payment status events so your systems stay in sync without polling the API.
+  <Card title="API keys + scopes" icon="shield-check" href="/authentication">
+    Fine-grained scopes (`fx:read`, `transfers:write`, `collections:write`) for production integrations.
   </Card>
-  <Card title="Stablecoin Native" icon="arrows-rotate" href="/concepts/stablecoins">
-    Accept USDC, USDT, and other leading stablecoins as the funding source for every payment.
+  <Card title="Idempotency" icon="lock" href="/api-reference/idempotency">
+  Safe retries on all mutating API-key requests.
   </Card>
-  <Card title="Sandbox Testing" icon="flask" href="/guides/testing">
-    A full-featured sandbox environment mirrors production — test every scenario before going live.
+  <Card title="Test keys" icon="flask" href="/guides/testing">
+    Develop with `rmf_test_` keys before going live with `rmf_live_`.
   </Card>
   <Card title="REST API" icon="code" href="/api-reference/overview">
-    A clean, predictable REST API with JSON payloads, idempotency keys, and comprehensive error codes.
+    JSON responses, consistent error envelopes, interactive playground.
   </Card>
 </CardGroup>
 
-## How Onboarding Works
-
-Getting your first payment live takes three steps. You can complete the entire flow in an afternoon.
+## Getting started
 
 <Steps>
-  <Step title="Create Your Account">
-    Sign up at [dashboard.remitflex.com](https://dashboard.remitflex.com) and complete identity verification for your business. Once approved, your account is provisioned with sandbox access immediately.
+  <Step title="Create your account">
+    Sign up at [dashboard.remitflex.com](https://dashboard.remitflex.com) and complete OTP login.
   </Step>
-  <Step title="Integrate the API">
-    Grab your test API key from the dashboard, follow the [Quickstart](/quickstart) to make your first call, and build your integration against the sandbox environment — no real funds involved.
+  <Step title="Create an API key">
+    In **Settings → API Keys**, create a test key with the scopes you need. Copy it immediately — it is only shown once.
   </Step>
-  <Step title="Go Live">
-    Switch to your live API key, fund your RemitFlex wallet with stablecoins, and start sending real payments. The [API Reference](/api-reference/overview) has everything you need to handle production edge cases.
+  <Step title="Make your first call">
+    Follow the [Quickstart](/quickstart) to fetch a rate and create a swap, or the [Send payment](/guides/send-payment) guide for payment routes.
+  </Step>
+  <Step title="Go live">
+    Create a `rmf_live_` key, update your production secrets, and start routing real volume.
   </Step>
 </Steps>

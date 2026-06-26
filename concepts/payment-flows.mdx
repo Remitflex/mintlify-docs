@@ -1,166 +1,85 @@
 ---
-title: "Payment Flows: Lifecycle, States, and Routing Logic"
-sidebarTitle: "Payment Flows"
-description: "Understand how payments move through RemitFlex — from creation to delivery — across stablecoin-to-stablecoin, off-ramp, and on-ramp flow types."
+title: "Payment flows"
+sidebarTitle: "Payment flows"
+description: "How Solana swaps and cross-chain payment routes work — statuses, lifecycle, and when to use each."
 ---
 
-Every payment in RemitFlex follows a well-defined lifecycle, moving through a sequence of states from the moment you create it to the moment your recipient receives funds. Understanding these flows — and the three primary payment types — helps you build integrations that handle status transitions gracefully, set accurate delivery expectations, and troubleshoot edge cases quickly.
+RemitFlex supports two primary money-movement patterns today: **Solana swaps** (same-chain token conversion) and **payment routes** (cross-chain collection via Relay). Both appear in the unified `GET /v1/transactions` ledger.
 
-## Payment Lifecycle States
+## Solana swap flow
 
-RemitFlex represents the state of every payment as a `status` field on the payment object. The status progresses forward through a linear happy path, with two terminal failure states that can occur at any point.
+Swaps convert one Solana SPL token into another (e.g. USDC → EURC) via Jupiter.
 
-| Status | Description |
-|---|---|
-| `pending` | The payment has been created and accepted by the API. RemitFlex is performing pre-flight compliance checks and preparing the routing plan. |
-| `processing` | Compliance checks passed. The payment is actively moving through the stablecoin rails and/or FX conversion layer. |
-| `compliance_review` | The payment has been flagged for manual compliance review and is temporarily on hold. You will receive a `compliance.review_required` webhook event. |
-| `settled` | On-chain settlement is confirmed. For stablecoin-to-stablecoin payments, this is the final success state. |
-| `delivered` | Funds have been deposited to the recipient's bank account or wallet. Applies to fiat off-ramp flows where bank delivery is the terminal step. |
-| `failed` | The payment could not be completed. The payment object will include a `failure_reason` field with a machine-readable code and human-readable message. |
-| `cancelled` | The payment was cancelled — either by your request before processing began, or automatically due to a compliance hold that was not resolved within the review window. |
+| Status | Meaning |
+|--------|---------|
+| `awaiting_deposit` | Swap created; waiting for deposit to `depositAddress` |
+| `deposit_received` | On-chain deposit detected |
+| `swapping` | Jupiter swap executing |
+| `completed` | Output delivered to `destinationAddress` |
+| `failed` | Error during swap or payout |
+| `expired` | Deposit window passed |
+| `cancelled` | Cancelled while still `awaiting_deposit` |
 
-<Info>
-  For stablecoin-to-stablecoin payments, `settled` is the terminal success state. The `delivered` status is only used for flows that end with a fiat bank deposit, confirming the recipient's account has been credited. The `compliance_review` status is a transient hold state — payments resume automatically once the review concludes.
-</Info>
+<Steps>
+  <Step title="Create swap">
+    `POST /v1/swaps` with `from`, `to`, `amount`, and `destinationAddress`. Requires `transfers:write` and `Idempotency-Key`.
+  </Step>
+  <Step title="Deposit">
+    Send the `from` token to the returned `depositAddress` (ATA) before `expiresAt`.
+  </Step>
+  <Step title="Settlement">
+    RemitFlex detects the deposit, swaps via Jupiter, and pays out to your destination wallet.
+  </Step>
+  <Step title="Track">
+    Poll `GET /v1/swaps/{id}` or check `GET /v1/transactions`.
+  </Step>
+</Steps>
 
-## Flow Types
+See [Currency conversion](/guides/currency-conversion) for a full walkthrough.
 
-RemitFlex supports three main payment flow types. The flow type is determined automatically by the source currency and destination currency you specify when creating a payment.
+## Payment route flow
 
-<Tabs>
-  <Tab title="Stablecoin → Stablecoin">
-    A **stablecoin-to-stablecoin** flow moves value between two stablecoin denominations — for example, converting USDC to EURC for a European business partner who holds a EURC wallet. No fiat banking system is involved.
+Payment routes collect funds on an **origin chain** and deliver on a **destination chain** via Relay.
 
-    This is the fastest flow type. Settlement is near-instant once on-chain confirmation is received, typically completing in under five minutes.
+| Status | Meaning |
+|--------|---------|
+| `active` | Route accepts deposits |
+| `paused` | Deposits paused |
+| `archived` | Route removed |
 
-    **Example use cases:**
-    - Paying a European supplier in EURC from your USDC treasury
-    - Rebalancing your own stablecoin holdings across currencies
-    - Settling invoices between businesses that both hold stablecoin wallets
+<Steps>
+  <Step title="Create route">
+    `POST /v1/payment-routes` with origin/destination chain IDs, currencies, and destination address. Requires `collections:write`.
+  </Step>
+  <Step title="Share deposit address">
+    Payers send funds to the route's `depositAddress` on the origin chain.
+  </Step>
+  <Step title="Relay settlement">
+    Relay bridges and delivers to the destination address.
+  </Step>
+  <Step title="Track deposits">
+    `GET /v1/payment-routes/{id}/deposits` or sync with `POST .../deposits/sync`.
+  </Step>
+</Steps>
 
-    **Typical lifecycle:**
+See [Send payment](/guides/send-payment) for a full walkthrough.
 
-    <Steps>
-      <Step title="Payment Created">
-        You call `POST /payments` with `source_currency: "USDC"` and `destination_currency: "EURC"`. RemitFlex returns a payment object with `status: "pending"`.
-      </Step>
-      <Step title="Compliance Pre-flight">
-        RemitFlex runs automated sanctions screening and AML checks against both the source and destination. This typically completes in under 10 seconds.
-      </Step>
-      <Step title="FX Conversion">
-        The orchestration engine locks an exchange rate and converts USDC to EURC via RemitFlex's liquidity network.
-      </Step>
-      <Step title="On-Chain Settlement">
-        EURC is delivered to the recipient's wallet address on-chain. Status transitions to `settled`.
-      </Step>
-    </Steps>
-  </Tab>
+## Choosing swaps vs payment routes
 
-  <Tab title="Stablecoin → Fiat (Off-Ramp)">
-    A **stablecoin-to-fiat** flow — commonly called an off-ramp — converts a stablecoin into a local fiat currency and deposits it into the recipient's bank account. This is the most common flow type for cross-border payroll, supplier payments, and remittances.
+| Use case | Recommended |
+|----------|-------------|
+| Convert USDC → EURC on Solana | **Swap** |
+| Collect on Ethereum, deliver on Polygon | **Payment route** |
+| Same-chain Solana conversion | **Swap** |
+| Multi-chain intake to one destination | **Payment route** |
 
-    **Example use cases:**
-    - Paying a contractor in Mexico in MXN from your USDC balance
-    - Disbursing salaries to a distributed workforce in local currencies
-    - Settling vendor invoices denominated in a local currency
+## Authentication
 
-    **Typical lifecycle:**
+- **API key** (`rmf_test_` / `rmf_live_`) — programmatic access with scopes
+- **Dashboard JWT** — full access from the web app; no idempotency key required
 
-    <Steps>
-      <Step title="Payment Created">
-        You call `POST /payments` with `source_currency: "USDC"`, `destination_currency: "MXN"`, and the recipient's bank account details. Status is `pending`.
-      </Step>
-      <Step title="Compliance Pre-flight">
-        Automated AML and sanctions checks run against both the sender and recipient. Passes in seconds for most payments.
-      </Step>
-      <Step title="On-Chain Settlement">
-        USDC is moved on-chain to RemitFlex's local liquidity partner in the destination corridor. Status moves to `processing`.
-      </Step>
-      <Step title="FX Conversion">
-        The liquidity partner converts USDC to MXN at the locked exchange rate.
-      </Step>
-      <Step title="Bank Delivery">
-        MXN is deposited into the recipient's bank account via the local payment rail (e.g., SPEI in Mexico). Status transitions to `delivered`.
-      </Step>
-    </Steps>
+Key management (`/v1/api-keys`) and login (`/v1/auth`) require JWT only.
 
-    <Note>
-      Bank delivery timelines depend on the destination corridor and local banking hours. Most off-ramp corridors settle within 1–2 business days after on-chain confirmation. See the [Corridors](/concepts/corridors) page for corridor-specific settlement estimates.
-    </Note>
-  </Tab>
+## Status updates
 
-  <Tab title="Fiat → Stablecoin (On-Ramp)">
-    A **fiat-to-stablecoin** flow — an on-ramp — accepts a local currency deposit from a bank account and issues the equivalent stablecoin to a destination wallet. This flow is useful for funding a stablecoin treasury from a traditional bank account.
-
-    **Example use cases:**
-    - Funding your RemitFlex USDC balance from a USD business bank account
-    - Converting incoming EUR bank payments into EURC for your treasury
-    - Enabling customers to top up a stablecoin wallet from a local bank transfer
-
-    **Typical lifecycle:**
-
-    <Steps>
-      <Step title="On-Ramp Intent Created">
-        You call `POST /payments` with `source_currency: "USD"` (fiat) and `destination_currency: "USDC"`. RemitFlex returns a payment object and a bank transfer instruction (account number, reference code) for your sender to use.
-      </Step>
-      <Step title="Bank Transfer Initiated">
-        The sender initiates a bank transfer to the RemitFlex virtual account using the provided reference. RemitFlex monitors for the inbound transfer.
-      </Step>
-      <Step title="Fiat Received">
-        RemitFlex confirms receipt of the fiat funds. Status transitions to `processing`.
-      </Step>
-      <Step title="Stablecoin Issued">
-        The equivalent USDC is minted or released from reserves and sent on-chain to the destination wallet. Status transitions to `settled`.
-      </Step>
-    </Steps>
-
-    <Warning>
-      On-ramp flows depend on inbound bank transfer timing and are subject to the source country's banking rail cut-off times. The payment remains in `pending` state until the bank transfer is confirmed received, which may take up to one business day.
-    </Warning>
-  </Tab>
-</Tabs>
-
-## Payment Routing and the Orchestration Engine
-
-When you submit a payment, RemitFlex's orchestration engine automatically selects the optimal route based on:
-
-- **Corridor availability** — Which liquidity partners and settlement paths are active for the source/destination pair
-- **Exchange rates** — Real-time FX quotes from multiple liquidity providers; the engine selects the best rate
-- **Settlement speed** — Routes are weighted toward faster paths when multiple options exist at similar cost
-- **Compliance posture** — Certain corridors require additional screening steps; the engine factors these in before routing
-
-You don't need to specify a route. If you want visibility into the route chosen, the payment object's `routing` field contains the selected corridor ID, liquidity provider, and the locked exchange rate applied to your payment.
-
-<Tip>
-  Use the `preferred_settlement_speed` parameter when creating a payment if your use case prioritises either cost or speed. Accepted values are `"economy"` and `"express"`. Express routing is available on select corridors and incurs a small premium.
-</Tip>
-
-## Settlement Times by Flow Type
-
-| Flow Type | On-Chain Settlement | End-to-End Delivery |
-|---|---|---|
-| Stablecoin → Stablecoin | < 5 minutes | < 5 minutes |
-| Stablecoin → Fiat (Off-Ramp) | < 30 minutes | 1–2 business days |
-| Fiat → Stablecoin (On-Ramp) | < 30 min after bank receipt | Depends on inbound bank transfer |
-
-<Info>
-  All times are estimates under normal operating conditions. Compliance reviews, network congestion, or local banking disruptions can extend these windows. RemitFlex will emit a `payment.delayed` webhook event if a payment exceeds its expected settlement window.
-</Info>
-
-## Webhook Events for Payment State Changes
-
-Rather than polling the `GET /payments/{id}` endpoint, subscribe to webhooks to receive real-time state updates. RemitFlex emits an event each time a payment transitions to a new status.
-
-| Event | Trigger |
-|---|---|
-| `payment.pending` | Payment created and accepted |
-| `payment.processing` | Compliance passed; payment is on its way |
-| `compliance.review_required` | Payment flagged for manual compliance review and on hold |
-| `compliance.review_approved` | Compliance review passed; payment resumes automatically |
-| `payment.settled` | On-chain settlement confirmed |
-| `payment.delivered` | Fiat deposited to recipient bank account |
-| `payment.failed` | Payment could not be completed |
-| `payment.cancelled` | Payment cancelled by request or compliance hold |
-
-Configure your webhook endpoint in the RemitFlex dashboard under **Developers → Webhooks**, or via the `POST /webhooks` API endpoint.
+Outbound webhooks are not yet available. Poll swap and deposit endpoints, or use `GET /v1/transactions` for a unified view.

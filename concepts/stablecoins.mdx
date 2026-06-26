@@ -4,6 +4,10 @@ sidebarTitle: "Stablecoins"
 description: "Learn how RemitFlex uses stablecoins to power fast, low-cost cross-border payments — and how blockchain complexity is abstracted from your integration."
 ---
 
+<Note>
+  **Current API:** Solana swaps (`POST /v1/swaps`) support USDC, EURC, and other Jupiter-routed pairs on Solana. Cross-chain stablecoin movement uses [payment routes](/guides/send-payment) via Relay. The currencies below describe the broader stablecoin landscape.
+</Note>
+
 Stablecoins are digital currencies whose value is pegged to a stable reference asset — most commonly the US dollar — giving you the programmability and speed of blockchain rails without the price volatility associated with cryptocurrencies like Bitcoin or Ether. RemitFlex uses stablecoins as its internal settlement layer, routing your payments across borders in seconds while you interact exclusively with a straightforward REST API.
 
 ## Why Stablecoins for Cross-Border Payments
@@ -111,10 +115,10 @@ Here's what RemitFlex manages on your behalf:
 
 ## Settlement and Your Integration
 
-RemitFlex processes all on-chain settlement asynchronously in the background. When you create a payment via the API, you receive an immediate response with a payment object and a `pending` status. As the payment progresses through the stablecoin rails, RemitFlex emits webhook events to your configured endpoint so your system stays in sync without polling.
+RemitFlex processes on-chain settlement asynchronously. When you create a swap via `POST /v1/swaps`, you receive a deposit address immediately. Poll `GET /v1/swaps/{id}` for status transitions.
 
 <Info>
-  Your API integration never references blockchain transaction hashes, wallet addresses, or token contracts unless you explicitly request on-chain metadata for audit purposes. The `/payments/{id}` endpoint exposes an optional `onchain_details` field for that use case.
+  Swap responses include `depositAddress`, `swapTxSignature`, and `payoutTxSignature` for on-chain audit. Payment routes expose deposit and Relay metadata via `GET /v1/payment-routes/{id}/deposits`.
 </Info>
 
 The on-chain settlement layer is an implementation detail that RemitFlex manages — your integration concern is the payment lifecycle, not the blockchain mechanics underneath it.

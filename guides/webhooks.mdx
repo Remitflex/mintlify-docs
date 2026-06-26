@@ -4,7 +4,11 @@ sidebarTitle: "Webhooks"
 description: "Register an HTTPS endpoint, verify HMAC-SHA256 signatures, and handle the full lifecycle of payment, conversion, and off-ramp events from RemitFlex."
 ---
 
-Webhooks are HTTP callbacks that RemitFlex sends to your server when something happens — a payment delivers, a conversion completes, or a compliance review is triggered. Instead of polling the API for status changes, you register an endpoint and RemitFlex pushes events to you in real time.
+<Warning>
+  **Not yet available.** Outbound merchant webhooks are not implemented in the RemitFlex API today. Poll `GET /swaps/{id}` or `GET /payment-routes/{id}/deposits` for status updates. This page describes the planned webhook product.
+</Warning>
+
+Webhooks are HTTP callbacks that RemitFlex sends to your server when something happens.
 
 ## Register your webhook endpoint
 
