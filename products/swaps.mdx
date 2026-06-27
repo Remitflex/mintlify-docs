@@ -1,0 +1,72 @@
+---
+title: "Swaps"
+sidebarTitle: "Swaps"
+description: "Convert stablecoins on Solana — create a swap, deposit, and track settlement via Jupiter."
+---
+
+Swaps convert one Solana SPL token into another (e.g. USDC → EURC) via Jupiter. You receive a **deposit address**; once funded, RemitFlex executes the swap and pays out to your destination wallet.
+
+**Required scopes:** `fx:read`, `transfers:read`, `transfers:write`
+
+## When to use swaps
+
+- Same-chain stablecoin conversion on Solana
+- Treasury FX (USDC → EURC)
+- Payout preparation before a local off-ramp partner (manual today)
+
+For cross-chain collection, use [Payment routes](/products/payment-routes) instead.
+
+## Lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| `awaiting_deposit` | Waiting for deposit to `depositAddress` |
+| `deposit_received` | Deposit detected on-chain |
+| `swapping` | Jupiter swap executing |
+| `completed` | Output sent to `destinationAddress` |
+| `failed` / `expired` / `cancelled` | Terminal states |
+
+## Create a swap
+
+```bash
+curl -X POST https://api.remitflex.io/v1/swaps \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "USDC",
+    "to": "EURC",
+    "amount": 100,
+    "destinationAddress": "YOUR_SOLANA_WALLET"
+  }'
+```
+
+| Field | Description |
+|-------|-------------|
+| `from` / `to` | Currency codes (see `GET /v1/rates/currencies`) |
+| `amount` | Human-readable input amount |
+| `destinationAddress` | Solana address receiving output tokens |
+
+Send the `from` token to `depositAddress` before `expiresAt`.
+
+## Track and cancel
+
+```bash
+# Status
+curl https://api.remitflex.io/v1/swaps/{id} \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+
+# Cancel (only while awaiting_deposit)
+curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+## API reference
+
+<CardGroup cols={2}>
+  <Card title="Create swap" icon="plus" href="/api-reference/create-swap">`POST /swaps`</Card>
+  <Card title="List swaps" icon="list" href="/api-reference/list-swaps">`GET /swaps`</Card>
+  <Card title="Get swap" icon="eye" href="/api-reference/get-swap">`GET /swaps/{id}`</Card>
+  <Card title="Rates" icon="chart-line" href="/products/rates">Check FX before creating</Card>
+</CardGroup>

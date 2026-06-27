@@ -1,76 +1,82 @@
 ---
-title: "RemitFlex: stablecoin payments API"
+title: "RemitFlex — stablecoin infrastructure for Africa"
 sidebarTitle: "Introduction"
-description: "Solana swaps via Jupiter, cross-chain payment routes via Relay, and a unified transaction ledger — all behind one REST API."
+description: "Programmable stablecoin payments, swaps, and cross-chain collection — built for African fintechs, platforms, and enterprises."
 ---
 
-RemitFlex is a stablecoin payments API for businesses that need programmatic access to swaps and cross-chain collection. Deposit stablecoins on Solana or across Relay corridors; RemitFlex handles routing, settlement, and ledgering.
+RemitFlex is stablecoin payment infrastructure for the African market. Think [Bridge](https://bridge.xyz)-style programmable money movement — swaps, collection routes, customer records, and a unified ledger — delivered through a single REST API.
+
+We help businesses accept stablecoins, convert between denominations, and route value across chains without building Solana, Relay, or FX plumbing themselves.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Create an API key and run your first swap in minutes.
+    API key, first rate check, first swap — under ten minutes.
   </Card>
-  <Card title="Authentication" icon="key" href="/authentication">
-    API keys, scopes, Bearer tokens, and idempotency.
+  <Card title="Dashboard" icon="layout-dashboard" href="https://dashboard.kaprex.io">
+    Sign up, manage API keys, and monitor activity at dashboard.kaprex.io.
   </Card>
-  <Card title="Payment flows" icon="arrows-rotate" href="/concepts/payment-flows">
-    How swaps and payment routes work end to end.
+  <Card title="Payment routes" icon="route" href="/products/payment-routes">
+    Cross-chain collection for pay-ins across African and global corridors.
   </Card>
   <Card title="API reference" icon="code" href="/api-reference/overview">
-    Interactive docs and playground for every endpoint.
+    Interactive playground for every endpoint.
   </Card>
 </CardGroup>
 
-## What you can do today
+## What RemitFlex does
 
-| Capability | API | Provider |
-|------------|-----|----------|
-| **Solana swaps** | `POST /v1/swaps` | Jupiter |
-| **Cross-chain collection** | `POST /v1/payment-routes` | Relay |
-| **FX rates** | `GET /v1/rates` | Jupiter (cached) |
-| **Transaction ledger** | `GET /v1/transactions` | RemitFlex |
-| **Customers** | `GET/POST /v1/customers` | RemitFlex |
+| Product | What it solves | API |
+|---------|----------------|-----|
+| **Swaps** | Convert USDC ↔ EURC and other Solana pairs | `POST /v1/swaps` |
+| **Payment routes** | Collect on one chain, settle on another (Relay) | `POST /v1/payment-routes` |
+| **Customers** | Organise payers and beneficiaries under your org | `GET/POST /v1/customers` |
+| **Transactions** | Single ledger for swaps + route deposits | `GET /v1/transactions` |
+| **Rates** | Live cached FX for supported pairs | `GET /v1/rates` |
 
-<Note>
-  Bank off-ramp and outbound merchant webhooks are planned but **not yet available** in the API. See [Off-ramp](/guides/off-ramp) and [Webhooks](/guides/webhooks) for the roadmap.
-</Note>
+## Built for African payments
 
-## Why RemitFlex
+RemitFlex is designed for teams building:
 
-<CardGroup cols={3}>
-  <Card title="Solana swaps" icon="arrows-rotate" href="/guides/currency-conversion">
-    Convert USDC, EURC, and other supported pairs on Solana with deposit-address flows.
-  </Card>
-  <Card title="Payment routes" icon="globe" href="/guides/send-payment">
-    Collect on one chain, deliver on another via Relay corridors.
-  </Card>
-  <Card title="API keys + scopes" icon="shield-check" href="/authentication">
-    Fine-grained scopes (`fx:read`, `transfers:write`, `collections:write`) for production integrations.
-  </Card>
-  <Card title="Idempotency" icon="lock" href="/api-reference/idempotency">
-  Safe retries on all mutating API-key requests.
-  </Card>
-  <Card title="Test keys" icon="flask" href="/guides/testing">
-    Develop with `rmf_test_` keys before going live with `rmf_live_`.
-  </Card>
-  <Card title="REST API" icon="code" href="/api-reference/overview">
-    JSON responses, consistent error envelopes, interactive playground.
-  </Card>
-</CardGroup>
+- **Cross-border B2B** — suppliers, freelancers, and remittance corridors into and across Africa
+- **Stablecoin treasuries** — hold USDC, pay out in local stablecoins or across chains
+- **Platform embeds** — marketplaces and payroll products that need programmable collection addresses
 
-## Getting started
+See [African corridors](/concepts/african-corridors) for how we think about routing and [Platform overview](/concepts/platform) for the full mental model.
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph YourApp["Your application"]
+    API[RemitFlex API]
+  end
+  subgraph Products["Products"]
+    Swaps[Swaps — Jupiter]
+    Routes[Payment routes — Relay]
+  end
+  subgraph Ledger["Ledger"]
+    Tx[Transactions]
+  end
+  API --> Swaps
+  API --> Routes
+  Swaps --> Tx
+  Routes --> Tx
+```
+
+## Get started
 
 <Steps>
-  <Step title="Create your account">
-    Sign up at [dashboard.remitflex.com](https://dashboard.remitflex.com) and complete OTP login.
+  <Step title="Create an account">
+    Register at [dashboard.kaprex.io](https://dashboard.kaprex.io) and complete email OTP verification.
   </Step>
   <Step title="Create an API key">
-    In **Settings → API Keys**, create a test key with the scopes you need. Copy it immediately — it is only shown once.
+    In the dashboard, create a **test** key with scopes for the products you need (`fx:read`, `transfers:write`, `collections:write`).
   </Step>
-  <Step title="Make your first call">
-    Follow the [Quickstart](/quickstart) to fetch a rate and create a swap, or the [Send payment](/guides/send-payment) guide for payment routes.
-  </Step>
-  <Step title="Go live">
-    Create a `rmf_live_` key, update your production secrets, and start routing real volume.
+  <Step title="Integrate">
+    Follow the [Quickstart](/quickstart) or jump to [Swaps](/products/swaps) / [Payment routes](/products/payment-routes).
   </Step>
 </Steps>
+
+<Note>
+  Bank off-ramp and outbound webhooks are on the roadmap. Today, use swaps and payment routes plus the transactions ledger for status.
+</Note>

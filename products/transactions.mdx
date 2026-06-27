@@ -1,0 +1,48 @@
+---
+title: "Transactions ledger"
+sidebarTitle: "Transactions"
+description: "Unified view of swaps and payment-route deposits for reconciliation and reporting."
+---
+
+The transactions endpoint merges **swap activity** and **payment-route deposits** into one chronological feed — your single source of truth for what settled through RemitFlex.
+
+**Required scope:** `transfers:read`
+
+## List transactions
+
+```bash
+curl https://api.remitflex.io/v1/transactions \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Each row includes:
+
+| Field | Description |
+|-------|-------------|
+| `kind` | `swap` or `payment_route` |
+| `customerId` / `customerName` | Linked counterparty |
+| `status` | Settlement status |
+| `amount` | Human-readable amount string |
+| `destination` | Wallet or route destination |
+| `receipt` | Provider-specific metadata (signatures, route IDs) |
+| `createdAt` | ISO timestamp |
+
+Returns up to **200** most recent events, swaps and deposits merged by time.
+
+## Sync behaviour
+
+Listing transactions triggers a **deposit sync** for your org's payment routes before returning results, so route deposits are as fresh as Relay allows.
+
+For explicit sync on one route, use `POST /v1/payment-routes/{id}/deposits/sync`.
+
+## Reconciliation pattern
+
+1. Poll `GET /v1/transactions` on a schedule, or after webhook support ships
+2. Match `id` + `kind` to your internal payment records
+3. Use `receipt` for on-chain proof (tx signatures, Relay IDs)
+
+## API reference
+
+<Card title="List transactions" icon="book-open" href="/api-reference/list-transactions">
+  `GET /transactions`
+</Card>

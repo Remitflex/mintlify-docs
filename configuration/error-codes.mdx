@@ -92,7 +92,7 @@ When using API keys, mutating requests require `Idempotency-Key`. Retrying with 
 Use a **new** idempotency key for each distinct operation.
 
 ```bash
-curl -X POST https://api.remitflex.com/v1/swaps \
+curl -X POST https://api.remitflex.io/v1/swaps \
   -H "Authorization: Bearer rmf_test_xxxx" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \

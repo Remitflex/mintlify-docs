@@ -1,0 +1,90 @@
+---
+title: "Payment routes"
+sidebarTitle: "Payment routes"
+description: "Cross-chain stablecoin collection — create routes, share deposit addresses, and sync deposits via Relay."
+---
+
+Payment routes let payers send stablecoins on an **origin chain** and receive funds on a **destination chain**. Each route has a persistent deposit address and status (`active`, `paused`, `archived`).
+
+Powered by Relay. Ideal for African fintechs collecting USDC from diaspora or global payers and settling to a treasury wallet.
+
+**Required scopes:** `collections:read`, `collections:write`
+
+## When to use payment routes
+
+- Cross-chain pay-ins (Ethereum → Solana, etc.)
+- Per-customer or per-invoice collection addresses
+- Platform aggregation before internal ledgering
+
+For same-chain Solana conversion, use [Swaps](/products/swaps).
+
+## Create a route
+
+```bash
+# Explore supported chains and corridors first
+curl https://api.remitflex.io/v1/payment-routes/chains \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+
+curl https://api.remitflex.io/v1/payment-routes/corridors \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+```bash
+curl -X POST https://api.remitflex.io/v1/payment-routes \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Supplier collection",
+    "originChainId": 792703809,
+    "destinationChainId": 137,
+    "destinationCurrency": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+    "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "customerId": "optional-customer-uuid"
+  }'
+```
+
+The response includes `depositAddress` — share this with the payer on the origin chain.
+
+## Monitor deposits
+
+```bash
+# All deposits for your org
+curl https://api.remitflex.io/v1/payment-routes/deposits \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+
+# Deposits for one route
+curl https://api.remitflex.io/v1/payment-routes/{id}/deposits \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+
+# Pull latest from Relay
+curl -X POST https://api.remitflex.io/v1/payment-routes/{id}/deposits/sync \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+## Manage lifecycle
+
+```bash
+# Pause / activate / archive
+curl -X POST https://api.remitflex.io/v1/payment-routes/{id}/pause \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
+
+curl -X DELETE https://api.remitflex.io/v1/payment-routes/{id} \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+## Link to customers
+
+Attach a `customerId` when creating a route to associate deposits with a [customer](/products/customers) record for reporting.
+
+## API reference
+
+<CardGroup cols={2}>
+  <Card title="Create route" icon="plus" href="/api-reference/create-payment-route">`POST /payment-routes`</Card>
+  <Card title="List routes" icon="list" href="/api-reference/list-payment-routes">`GET /payment-routes`</Card>
+  <Card title="Deposits" icon="inbox" href="/api-reference/list-all-payment-route-deposits">`GET /payment-routes/deposits`</Card>
+  <Card title="Chains & corridors" icon="globe" href="/api-reference/list-payment-route-chains">Discovery endpoints</Card>
+</CardGroup>

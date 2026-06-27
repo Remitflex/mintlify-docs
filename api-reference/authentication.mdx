@@ -16,12 +16,12 @@ Authorization: Bearer rmf_live_xxxxxxxxSSSSSSSSSSSSSSSSSSSSSS
 <CodeGroup>
 
 ```bash curl
-curl -X GET https://api.remitflex.com/v1/rates \
+curl -X GET https://api.remitflex.io/v1/rates \
   -H "Authorization: Bearer rmf_test_xxxx"
 ```
 
 ```javascript JavaScript
-const res = await fetch("https://api.remitflex.com/v1/rates", {
+const res = await fetch("https://api.remitflex.io/v1/rates", {
   headers: { Authorization: `Bearer ${process.env.REMITFLEX_API_KEY}` },
 });
 ```
@@ -29,7 +29,7 @@ const res = await fetch("https://api.remitflex.com/v1/rates", {
 ```python Python
 import os, requests
 r = requests.get(
-    "https://api.remitflex.com/v1/rates",
+    "https://api.remitflex.io/v1/rates",
     headers={"Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}"},
 )
 ```
@@ -49,7 +49,7 @@ r = requests.get(
 
 ## Obtaining keys
 
-1. Log in at [dashboard.remitflex.com](https://dashboard.remitflex.com).
+1. Log in at [dashboard.kaprex.io](https://dashboard.kaprex.io).
 2. Go to **Settings → API Keys**.
 3. Create a key with the scopes your integration needs.
 4. Copy the raw key immediately — it cannot be retrieved later.

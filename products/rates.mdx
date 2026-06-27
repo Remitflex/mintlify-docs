@@ -1,0 +1,42 @@
+---
+title: "Rates"
+sidebarTitle: "Rates"
+description: "Cached Jupiter FX rates for supported Solana stablecoin pairs."
+---
+
+Rates power swap quoting. RemitFlex caches Jupiter prices and refreshes them in the background — reads never hit Jupiter directly.
+
+**Required scope:** `fx:read`
+
+## All rates
+
+```bash
+curl https://api.remitflex.io/v1/rates \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+## Single pair
+
+```bash
+curl https://api.remitflex.io/v1/rates/USDC/EURC \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Returns `503` if the pair is not cached yet — retry after a few seconds.
+
+## Supported pairs
+
+```bash
+curl https://api.remitflex.io/v1/rates/currencies \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Use `data.pairs` when validating swap requests before calling `POST /v1/swaps`.
+
+## API reference
+
+<CardGroup cols={3}>
+  <Card title="List rates" icon="list" href="/api-reference/list-rates">`GET /rates`</Card>
+  <Card title="Pair rate" icon="arrow-right-left" href="/api-reference/get-pair-rate">`GET /rates/{from}/{to}`</Card>
+  <Card title="Currencies" icon="coins" href="/api-reference/list-rate-currencies">`GET /rates/currencies`</Card>
+</CardGroup>

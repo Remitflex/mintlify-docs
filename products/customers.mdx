@@ -1,0 +1,75 @@
+---
+title: "Customers"
+sidebarTitle: "Customers"
+description: "Organise payers and beneficiaries under your organisation for swaps and payment routes."
+---
+
+Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup; you can add more for reporting and route attribution.
+
+**Required scopes:** `transfers:read` (list), `transfers:write` (create)
+
+## Why customers matter
+
+- Attach `customerId` to [payment routes](/products/payment-routes) for per-counterparty collection
+- Swaps resolve against your org's customer context for ledgering
+- `GET /v1/transactions` includes `customerName` for reconciliation
+
+## List customers
+
+```bash
+curl https://api.remitflex.io/v1/customers \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "message": "Customers fetched",
+  "data": {
+    "customers": [
+      {
+        "id": "uuid",
+        "name": "Acme Ltd",
+        "email": "treasury@acme.io",
+        "type": "business",
+        "isPrimary": true,
+        "createdAt": "2026-06-01T00:00:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+## Create a customer
+
+```bash
+curl -X POST https://api.remitflex.io/v1/customers \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Supplier",
+    "email": "jane@supplier.co.ke",
+    "type": "individual"
+  }'
+```
+
+| Field | Rules |
+|-------|-------|
+| `name` | 2–120 characters |
+| `email` | Valid email |
+| `type` | `individual` or `business` (default: `individual`) |
+
+## Dashboard
+
+You can also view customers at [dashboard.kaprex.io](https://dashboard.kaprex.io). API keys cannot manage dashboard-only settings.
+
+## API reference
+
+<CardGroup cols={2}>
+  <Card title="List customers" icon="users" href="/api-reference/list-customers">`GET /customers`</Card>
+  <Card title="Create customer" icon="user-plus" href="/api-reference/create-customer">`POST /customers`</Card>
+</CardGroup>

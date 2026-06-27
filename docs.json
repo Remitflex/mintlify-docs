@@ -29,13 +29,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@remitflex.com"
+        "href": "mailto:support@remitflex.io"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.remitflex.com"
+      "href": "https://dashboard.kaprex.io"
     }
   },
   "navigation": {
@@ -44,7 +44,7 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Get started",
             "pages": [
               "introduction",
               "quickstart",
@@ -52,36 +52,50 @@
             ]
           },
           {
-            "group": "Core Concepts",
+            "group": "Platform",
             "pages": [
+              "concepts/platform",
               "concepts/stablecoins",
-              "concepts/payment-flows",
-              "concepts/corridors",
-              "concepts/compliance"
+              "concepts/african-corridors"
             ]
           },
           {
-            "group": "Guides",
+            "group": "Swaps",
             "pages": [
-              "guides/send-payment",
-              "guides/currency-conversion",
-              "guides/off-ramp",
-              "guides/webhooks",
-              "guides/testing"
+              "products/swaps"
             ]
           },
           {
-            "group": "Configuration",
+            "group": "Payment routes",
+            "pages": [
+              "products/payment-routes"
+            ]
+          },
+          {
+            "group": "Customers",
+            "pages": [
+              "products/customers"
+            ]
+          },
+          {
+            "group": "Ledger",
+            "pages": [
+              "products/transactions",
+              "products/rates"
+            ]
+          },
+          {
+            "group": "Integration",
             "pages": [
               "configuration/environments",
-              "configuration/supported-currencies",
+              "guides/testing",
               "configuration/error-codes"
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "API reference",
         "openapi": "openapi.yaml",
         "groups": [
           {

@@ -1,0 +1,70 @@
+---
+title: "Platform overview"
+sidebarTitle: "Overview"
+description: "How RemitFlex fits together — orgs, API keys, products, and settlement rails."
+---
+
+RemitFlex gives you **programmable stablecoin infrastructure** over HTTPS. You create resources (swaps, payment routes, customers), fund them on-chain, and read status from a unified ledger.
+
+## Mental model
+
+If you have used [Bridge](https://bridge.xyz) or similar orchestration APIs, the pattern is familiar:
+
+1. **Authenticate** with an API key (`rmf_test_` / `rmf_live_`)
+2. **Create** a payment intent (swap or payment route)
+3. **Fund** the deposit address returned by the API
+4. **Track** status until settled
+5. **Reconcile** via `GET /v1/transactions`
+
+RemitFlex is narrower and deeper on **stablecoins** and **African use cases** — Solana-native swaps plus Relay cross-chain routes, not a full fiat bank network (yet).
+
+## Core objects
+
+| Object | Purpose |
+|--------|---------|
+| **Organisation** | Your tenant. Created at signup. |
+| **Customer** | A payer or counterparty under your org (individual or business). |
+| **Swap** | Solana token conversion with a time-bound deposit address. |
+| **Payment route** | Cross-chain collection route with a persistent deposit address. |
+| **Transaction** | Ledger row linking swaps and route deposits for reporting. |
+| **API key** | Scoped programmatic access (`fx:read`, `transfers:write`, `collections:write`, etc.). |
+
+## Authentication layers
+
+| Audience | Auth | Used for |
+|----------|------|----------|
+| Dashboard users | JWT (email + OTP) | Signup, login, API key management |
+| Integrations | API key (Bearer) | Swaps, routes, customers, rates, transactions |
+
+Dashboard: [dashboard.kaprex.io](https://dashboard.kaprex.io)
+
+API base: `https://api.remitflex.io/v1`
+
+## Settlement rails
+
+| Product | Rail | Typical use |
+|---------|------|-------------|
+| Swaps | Jupiter on Solana | Same-chain stablecoin conversion (e.g. USDC → EURC) |
+| Payment routes | Relay | Cross-chain pay-in (e.g. collect on Ethereum, deliver on Solana) |
+
+## Scopes
+
+API keys use fine-grained scopes. Grant only what each service needs:
+
+| Scope | Access |
+|-------|--------|
+| `fx:read` | Rates |
+| `transfers:read` | Read swaps, customers, transactions |
+| `transfers:write` | Create/cancel swaps, create customers |
+| `collections:read` | Read payment routes and deposits |
+| `collections:write` | Create and manage payment routes |
+
+See [Authentication](/authentication) for key format and idempotency rules.
+
+## What we do not do yet
+
+- Fiat bank off-ramp (NGN, KES, etc. to local bank accounts)
+- Outbound merchant webhooks
+- Self-serve API key creation via API key (keys are created in the dashboard)
+
+These are planned; the API surface will expand without breaking existing v1 contracts where possible.

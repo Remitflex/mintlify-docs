@@ -10,7 +10,7 @@ The RemitFlex API is a RESTful JSON API for Solana swaps (Jupiter), cross-chain 
 
 | Environment | Base URL |
 |-------------|----------|
-| Production | `https://api.remitflex.com/v1` |
+| Production | `https://api.remitflex.io/v1` |
 | Local | `http://localhost:4000/v1` |
 
 <Note>
@@ -30,7 +30,7 @@ Production requests must use HTTPS. Plain HTTP is only appropriate for local dev
 Send JSON bodies with `Content-Type: application/json` on `POST` requests.
 
 ```bash
-curl -X POST https://api.remitflex.com/v1/swaps \
+curl -X POST https://api.remitflex.io/v1/swaps \
   -H "Authorization: Bearer rmf_test_xxxx" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \

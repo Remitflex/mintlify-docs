@@ -10,7 +10,7 @@ RemitFlex uses **test** and **live** API keys to separate development from produ
 
 | Environment | Base URL |
 |-------------|----------|
-| Production | `https://api.remitflex.com/v1` |
+| Production | `https://api.remitflex.io/v1` |
 | Local development | `http://localhost:4000/v1` |
 
 <Note>
@@ -24,7 +24,7 @@ RemitFlex uses **test** and **live** API keys to separate development from produ
 | `rmf_test_` | Test | `rmf_test_4xKj9mNpQr...` |
 | `rmf_live_` | Live | `rmf_live_7vBz2wLsYt...` |
 
-Create and manage keys in the [Dashboard](https://dashboard.remitflex.com) under **Settings → API Keys**.
+Create and manage keys in the [Dashboard](https://dashboard.kaprex.io) under **Settings → API Keys**.
 
 <Tip>
   Store keys in environment variables. Your code should read `REMITFLEX_API_KEY` and `API_BASE` — only the values change between test and live deployments.
@@ -37,11 +37,11 @@ Create and manage keys in the [Dashboard](https://dashboard.remitflex.com) under
 
 ```bash
 # Test key against production API
-curl https://api.remitflex.com/v1/rates \
+curl https://api.remitflex.io/v1/rates \
   -H "Authorization: Bearer rmf_test_4xKj9mNpQr..."
 
 # Live key
-curl https://api.remitflex.com/v1/rates \
+curl https://api.remitflex.io/v1/rates \
   -H "Authorization: Bearer rmf_live_7vBz2wLsYt..."
 ```
 

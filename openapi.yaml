@@ -5,12 +5,14 @@ info:
   description: |
     Programmatic access to RemitFlex swaps, payment routes, rates, customers, and transactions.
 
+    **Dashboard:** Create API keys at https://dashboard.kaprex.io
+
     **Authentication:** Send your API key as `Authorization: Bearer rmf_live_...` or `rmf_test_...`.
 
     **Idempotency:** Mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`) require an `Idempotency-Key` header when authenticated with an API key.
 
 servers:
-  - url: https://api.remitflex.com/v1
+  - url: https://api.remitflex.io/v1
     description: Production
   - url: http://localhost:4000/v1
     description: Local development
@@ -24,7 +26,7 @@ components:
       type: http
       scheme: bearer
       description: |
-        API key created in the RemitFlex Dashboard (`rmf_live_...` or `rmf_test_...`).
+        API key created in the RemitFlex Dashboard at dashboard.kaprex.io (`rmf_live_...` or `rmf_test_...`).
         Key management endpoints require a dashboard JWT and are not part of this reference.
 
   parameters:
@@ -395,7 +397,7 @@ paths:
         - lang: bash
           label: curl
           source: |
-            curl -X POST https://api.remitflex.com/v1/swaps \
+            curl -X POST https://api.remitflex.io/v1/swaps \
               -H "Authorization: Bearer $REMITFLEX_API_KEY" \
               -H "Idempotency-Key: $(uuidgen)" \
               -H "Content-Type: application/json" \
