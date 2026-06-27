@@ -8,23 +8,23 @@ RemitFlex gives you **programmable stablecoin infrastructure** over HTTPS. You c
 
 ## Mental model
 
-If you have used [Bridge](https://bridge.xyz) or similar orchestration APIs, the pattern is familiar:
+The integration pattern is straightforward:
 
 1. **Authenticate** with an API key (`rmf_test_` / `rmf_live_`)
-2. **Create** a payment intent (swap or payment route)
+2. **Create** a payment intent (swap or payment route), optionally tied to a [customer](/products/customers)
 3. **Fund** the deposit address returned by the API
 4. **Track** status until settled
-5. **Reconcile** via `GET /v1/transactions`
+5. **Reconcile** via `GET /v1/transactions` — filter by `customerId` when needed
 
-RemitFlex is narrower and deeper on **stablecoins** and **African use cases** — Solana-native swaps plus Relay cross-chain routes, not a full fiat bank network (yet).
+RemitFlex is focused on **stablecoins** and **African use cases** — same-chain swaps and cross-chain collection routes, not a full fiat bank network (yet).
 
 ## Core objects
 
 | Object | Purpose |
 |--------|---------|
-| **Organisation** | Your tenant. Created at signup. |
-| **Customer** | A payer or counterparty under your org (individual or business). |
-| **Swap** | Solana token conversion with a time-bound deposit address. |
+| **Organisation** | Your tenant. Created at signup. Gets a primary customer automatically. |
+| **Customer** | A payer or counterparty under your org. Swaps and payment routes are tied to a customer. |
+| **Swap** | Same-chain stablecoin conversion with a time-bound deposit address. |
 | **Payment route** | Cross-chain collection route with a persistent deposit address. |
 | **Transaction** | Ledger row linking swaps and route deposits for reporting. |
 | **API key** | Scoped programmatic access (`fx:read`, `transfers:write`, `collections:write`, etc.). |
@@ -36,16 +36,16 @@ RemitFlex is narrower and deeper on **stablecoins** and **African use cases** �
 | Dashboard users | JWT (email + OTP) | Signup, login, API key management |
 | Integrations | API key (Bearer) | Swaps, routes, customers, rates, transactions |
 
-Dashboard: [dashboard.kaprex.io](https://dashboard.kaprex.io)
+Dashboard: [dashboard.remitflex.io](https://dashboard.remitflex.io)
 
 API base: `https://api.remitflex.io/v1`
 
-## Settlement rails
+## Products
 
-| Product | Rail | Typical use |
-|---------|------|-------------|
-| Swaps | Jupiter on Solana | Same-chain stablecoin conversion (e.g. USDC → EURC) |
-| Payment routes | Relay | Cross-chain pay-in (e.g. collect on Ethereum, deliver on Solana) |
+| Product | Typical use |
+|---------|-------------|
+| Swaps | Same-chain stablecoin conversion (e.g. USDC → EURC on Solana) |
+| Payment routes | Cross-chain pay-in (e.g. collect on Ethereum, deliver on Solana) |
 
 ## Scopes
 

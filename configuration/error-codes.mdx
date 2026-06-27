@@ -72,12 +72,14 @@ Validation errors (`422`) include an `errors` object with per-field messages fro
 | `409` | `Only pending swaps can be cancelled` | Swap is past `awaiting_deposit` |
 | `404` | `Swap not found` | Verify swap ID and org |
 
+Failed swaps return `status: failed` with a sanitized `errorMessage` on the swap object and in transaction `receipt` — not raw on-chain simulation output. Contact support with the swap ID if a deposit was received but conversion did not complete.
+
 ### Payment routes
 
 | HTTP | Message | Resolution |
 |------|---------|------------|
 | `404` | `Payment route not found` | Verify route ID |
-| `422` | Relay or corridor validation errors | Check chain IDs and currency addresses |
+| `422` | Corridor or currency validation errors | Check chain IDs and currency addresses |
 
 ## Rate limits
 

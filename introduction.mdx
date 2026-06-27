@@ -4,16 +4,16 @@ sidebarTitle: "Introduction"
 description: "Programmable stablecoin payments, swaps, and cross-chain collection — built for African fintechs, platforms, and enterprises."
 ---
 
-RemitFlex is stablecoin payment infrastructure for the African market. Think [Bridge](https://bridge.xyz)-style programmable money movement — swaps, collection routes, customer records, and a unified ledger — delivered through a single REST API.
+RemitFlex is stablecoin payment infrastructure for the African market — programmable money movement through a single REST API. Swaps, collection routes, customer records, and a unified ledger are all first-class resources.
 
-We help businesses accept stablecoins, convert between denominations, and route value across chains without building Solana, Relay, or FX plumbing themselves.
+We help businesses accept stablecoins, convert between denominations, and route value across chains without building wallet, FX, or cross-chain plumbing themselves.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
     API key, first rate check, first swap — under ten minutes.
   </Card>
-  <Card title="Dashboard" icon="layout-dashboard" href="https://dashboard.kaprex.io">
-    Sign up, manage API keys, and monitor activity at dashboard.kaprex.io.
+  <Card title="Dashboard" icon="layout-dashboard" href="https://dashboard.remitflex.io">
+    Sign up, manage API keys, and monitor activity at dashboard.remitflex.io.
   </Card>
   <Card title="Payment routes" icon="route" href="/products/payment-routes">
     Cross-chain collection for pay-ins across African and global corridors.
@@ -28,7 +28,7 @@ We help businesses accept stablecoins, convert between denominations, and route 
 | Product | What it solves | API |
 |---------|----------------|-----|
 | **Swaps** | Convert USDC ↔ EURC and other Solana pairs | `POST /v1/swaps` |
-| **Payment routes** | Collect on one chain, settle on another (Relay) | `POST /v1/payment-routes` |
+| **Payment routes** | Collect on one chain, settle on another | `POST /v1/payment-routes` |
 | **Customers** | Organise payers and beneficiaries under your org | `GET/POST /v1/customers` |
 | **Transactions** | Single ledger for swaps + route deposits | `GET /v1/transactions` |
 | **Rates** | Live cached FX for supported pairs | `GET /v1/rates` |
@@ -51,8 +51,8 @@ flowchart LR
     API[RemitFlex API]
   end
   subgraph Products["Products"]
-    Swaps[Swaps — Jupiter]
-    Routes[Payment routes — Relay]
+    Swaps[Swaps]
+    Routes[Payment routes]
   end
   subgraph Ledger["Ledger"]
     Tx[Transactions]
@@ -67,7 +67,7 @@ flowchart LR
 
 <Steps>
   <Step title="Create an account">
-    Register at [dashboard.kaprex.io](https://dashboard.kaprex.io) and complete email OTP verification.
+    Register at [dashboard.remitflex.io](https://dashboard.remitflex.io) and complete email OTP verification.
   </Step>
   <Step title="Create an API key">
     In the dashboard, create a **test** key with scopes for the products you need (`fx:read`, `transfers:write`, `collections:write`).

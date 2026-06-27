@@ -5,7 +5,7 @@ info:
   description: |
     Programmatic access to RemitFlex swaps, payment routes, rates, customers, and transactions.
 
-    **Dashboard:** Create API keys at https://dashboard.kaprex.io
+    **Dashboard:** Create API keys at https://dashboard.remitflex.io
 
     **Authentication:** Send your API key as `Authorization: Bearer rmf_live_...` or `rmf_test_...`.
 
@@ -26,7 +26,7 @@ components:
       type: http
       scheme: bearer
       description: |
-        API key created in the RemitFlex Dashboard at dashboard.kaprex.io (`rmf_live_...` or `rmf_test_...`).
+        API key created in the RemitFlex Dashboard at dashboard.remitflex.io (`rmf_live_...` or `rmf_test_...`).
         Key management endpoints require a dashboard JWT and are not part of this reference.
 
   parameters:
@@ -39,6 +39,16 @@ components:
         type: string
         maxLength: 255
         example: 7f3c2a1b-4e5d-6c7b-8a9f-0e1d2c3b4a5f
+
+    CustomerIdQuery:
+      name: customerId
+      in: query
+      required: false
+      description: Filter results to a single customer under your organisation.
+      schema:
+        type: string
+        format: uuid
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
   schemas:
     SuccessEnvelope:
@@ -93,6 +103,11 @@ components:
           maxLength: 64
           example: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
           description: Solana address to receive swapped tokens.
+        customerId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Customer under your org. Defaults to the org primary customer.
 
     Swap:
       type: object
@@ -100,6 +115,11 @@ components:
         id:
           type: string
           format: uuid
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
         status:
           type: string
           enum:
@@ -146,6 +166,10 @@ components:
         errorMessage:
           type: string
           nullable: true
+          description: >
+            Human-readable failure reason when status is `failed`. Raw Solana simulation
+            logs and program errors are never returned — only safe messages suitable for
+            end users and reconciliation UIs.
         expiresAt:
           type: string
           format: date-time
@@ -278,12 +302,542 @@ components:
           type: string
           format: date-time
 
+  examples:
+    ListRatesResponse:
+      value:
+        status: success
+        message: Rates fetched
+        data:
+          chain: solana
+          updatedAt: "2026-06-26T12:00:00.000Z"
+          refreshing: false
+          rates:
+            - from: USDC
+              to: EURC
+              rate: 0.92
+              inverseRate: 1.087
+              inAmount: "1000000"
+              outAmount: "920000"
+              priceImpactPct: "0.01"
+              slippageBps: 50
+              inputMint: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+              outputMint: Hz6H6t6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K
+              fetchedAt: "2026-06-26T12:00:00.000Z"
+
+    ListCurrenciesResponse:
+      value:
+        status: success
+        message: Currencies fetched
+        data:
+          chain: solana
+          currencies:
+            - code: USDC
+              mint: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+              decimals: 6
+            - code: EURC
+              mint: Hz6H6t6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K
+              decimals: 6
+          pairs:
+            - from: USDC
+              to: EURC
+
+    PairRateResponse:
+      value:
+        status: success
+        message: Rate fetched
+        data:
+          from: USDC
+          to: EURC
+          rate: 0.92
+          inverseRate: 1.087
+          inAmount: "1000000"
+          outAmount: "920000"
+          priceImpactPct: "0.01"
+          slippageBps: 50
+          inputMint: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+          outputMint: Hz6H6t6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K3n6K
+          fetchedAt: "2026-06-26T12:00:00.000Z"
+
+    SwapObject:
+      value:
+        id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+        customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        customerName: Acme Ltd
+        status: awaiting_deposit
+        from: USDC
+        to: EURC
+        amount: 100
+        expectedAmount: "100000000"
+        receivedAmount: null
+        outputAmount: null
+        rate: 0.92
+        feeBps: 30
+        depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+        depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+        destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+        swapTxSignature: null
+        payoutTxSignature: null
+        errorMessage: null
+        expiresAt: "2026-06-26T12:30:00.000Z"
+        completedAt: null
+        createdAt: "2026-06-26T12:00:00.000Z"
+        updatedAt: "2026-06-26T12:00:00.000Z"
+        expectedOutput: 92
+        receivedOutput: null
+
+    GetSwapFailedResponse:
+      value:
+        status: success
+        message: Swap fetched
+        data:
+          id: f1a2b3c4-d5e6-7890-abcd-ef1234567899
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          status: failed
+          from: USDC
+          to: EURC
+          amount: 100
+          expectedAmount: "100000000"
+          receivedAmount: "100000000"
+          outputAmount: null
+          rate: 0.92
+          feeBps: 30
+          depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+          depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          swapTxSignature: null
+          payoutTxSignature: null
+          errorMessage: >-
+            This conversion could not be completed because there was not enough SOL to pay
+            network fees. Please contact support with your swap ID — your deposit will be reviewed.
+          expiresAt: "2026-06-26T12:30:00.000Z"
+          completedAt: null
+          createdAt: "2026-06-26T12:00:00.000Z"
+          updatedAt: "2026-06-26T12:05:00.000Z"
+          expectedOutput: 92
+          receivedOutput: null
+
+    ListSwapsResponse:
+      value:
+        status: success
+        message: Swaps fetched
+        data:
+          swaps:
+            - id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              customerName: Acme Ltd
+              status: awaiting_deposit
+              from: USDC
+              to: EURC
+              amount: 100
+              expectedAmount: "100000000"
+              receivedAmount: null
+              outputAmount: null
+              rate: 0.92
+              feeBps: 30
+              depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+              depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+              destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+              swapTxSignature: null
+              payoutTxSignature: null
+              errorMessage: null
+              expiresAt: "2026-06-26T12:30:00.000Z"
+              completedAt: null
+              createdAt: "2026-06-26T12:00:00.000Z"
+              updatedAt: "2026-06-26T12:00:00.000Z"
+              expectedOutput: 92
+              receivedOutput: null
+          total: 1
+
+    CreateSwapResponse:
+      value:
+        status: success
+        message: Swap created. Deposit to the address provided.
+        data:
+          id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          status: awaiting_deposit
+          from: USDC
+          to: EURC
+          amount: 100
+          expectedAmount: "100000000"
+          receivedAmount: null
+          outputAmount: null
+          rate: 0.92
+          feeBps: 30
+          depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+          depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          swapTxSignature: null
+          payoutTxSignature: null
+          errorMessage: null
+          expiresAt: "2026-06-26T12:30:00.000Z"
+          completedAt: null
+          createdAt: "2026-06-26T12:00:00.000Z"
+          updatedAt: "2026-06-26T12:00:00.000Z"
+          expectedOutput: 92
+          receivedOutput: null
+
+    GetSwapResponse:
+      value:
+        status: success
+        message: Swap fetched
+        data:
+          id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          status: completed
+          from: USDC
+          to: EURC
+          amount: 100
+          expectedAmount: "100000000"
+          receivedAmount: "100000000"
+          outputAmount: "92000000"
+          rate: 0.92
+          feeBps: 30
+          depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+          depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          swapTxSignature: 5K7x8y9zAbCdEfGhIjKlMnOpQrStUvWxYz1234567890abcdef
+          payoutTxSignature: 3mN4oP5qR6sT7uV8wX9yZ0aB1cD2eF3gH4iJ5kL6mN7oP8qR
+          errorMessage: null
+          expiresAt: "2026-06-26T12:30:00.000Z"
+          completedAt: "2026-06-26T12:05:00.000Z"
+          createdAt: "2026-06-26T12:00:00.000Z"
+          updatedAt: "2026-06-26T12:05:00.000Z"
+          expectedOutput: 92
+          receivedOutput: 92
+
+    CancelSwapResponse:
+      value:
+        status: success
+        message: Swap cancelled
+        data:
+          id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          status: cancelled
+          from: USDC
+          to: EURC
+          amount: 100
+          expectedAmount: "100000000"
+          receivedAmount: null
+          outputAmount: null
+          rate: 0.92
+          feeBps: 30
+          depositAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+          depositWallet: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          destinationAddress: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          swapTxSignature: null
+          payoutTxSignature: null
+          errorMessage: null
+          expiresAt: "2026-06-26T12:30:00.000Z"
+          completedAt: null
+          createdAt: "2026-06-26T12:00:00.000Z"
+          updatedAt: "2026-06-26T12:01:00.000Z"
+          expectedOutput: 92
+          receivedOutput: null
+
+    ListCustomersResponse:
+      value:
+        status: success
+        message: Customers fetched
+        data:
+          customers:
+            - id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              name: Acme Ltd
+              email: treasury@acme.io
+              type: business
+              isPrimary: true
+              createdAt: "2026-06-01T00:00:00.000Z"
+              updatedAt: "2026-06-01T00:00:00.000Z"
+          total: 1
+
+    CreateCustomerResponse:
+      value:
+        status: success
+        message: Customer created
+        data:
+          id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+          name: Jane Supplier
+          email: jane@supplier.co.ke
+          type: individual
+          isPrimary: false
+          createdAt: "2026-06-26T12:00:00.000Z"
+          updatedAt: "2026-06-26T12:00:00.000Z"
+
+    ListTransactionsResponse:
+      value:
+        status: success
+        message: Transactions fetched
+        data:
+          transactions:
+            - id: dep-uuid-001
+              kind: payment_route
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              customerName: Acme Ltd
+              status: success
+              destination: "Polygon · USDC → 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+              amount: "250 USDC"
+              amountUsd: "250.00"
+              createdAt: "2026-06-26T11:00:00.000Z"
+              receipt:
+                type: payment_route_deposit
+                depositId: dep-uuid-001
+                relayRequestId: req_abc123
+                routeId: route-uuid-001
+                routeName: Supplier collection
+                status: success
+                origin:
+                  chainId: 8453
+                  chainName: Base
+                  symbol: ETH
+                  amount: "0.0005"
+                  amountUsd: "0.78"
+                destination:
+                  chainId: 137
+                  chainName: Polygon
+                  symbol: USDC
+                  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+                  amount: "250"
+                  amountUsd: "250.00"
+                depositTxHash: "0xabc123def4567890"
+            - id: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+              kind: swap
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              customerName: Acme Ltd
+              status: completed
+              destination: "EURC → 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB"
+              amount: "100 USDC"
+              amountUsd: null
+              createdAt: "2026-06-26T10:00:00.000Z"
+              receipt:
+                type: swap
+                swapId: cee5e1aa-e9f4-47cc-8f5c-870e1b90e3e3
+                status: completed
+            - id: f1a2b3c4-d5e6-7890-abcd-ef1234567899
+              kind: swap
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              customerName: Acme Ltd
+              status: failed
+              destination: "EURC → 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB"
+              amount: "100 USDC"
+              amountUsd: null
+              createdAt: "2026-06-26T09:00:00.000Z"
+              receipt:
+                type: swap
+                swapId: f1a2b3c4-d5e6-7890-abcd-ef1234567899
+                status: failed
+                errorMessage: >-
+                  This conversion could not be completed because there was not enough SOL to pay
+                  network fees. Please contact support with your swap ID — your deposit will be reviewed.
+          total: 3
+
+    PaymentRouteObject:
+      value:
+        id: route-uuid-001
+        name: Supplier collection
+        status: active
+        customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        customerName: Acme Ltd
+        origin:
+          chainId: 792703809
+          chainName: Solana
+          currency: So11111111111111111111111111111111111111112
+          symbol: SOL
+          acceptableTokens:
+            - symbol: USDC
+              address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        destination:
+          chainId: 137
+          chainName: Polygon
+          currency: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+          symbol: USDC
+          address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+        refundTo: null
+        depositAddress: "0xDepositAddress1234567890abcdef"
+        relayRequestId: req_abc123
+        strict: false
+        createdAt: "2026-06-26T09:00:00.000Z"
+        updatedAt: "2026-06-26T09:00:00.000Z"
+
+    ListPaymentRoutesResponse:
+      value:
+        status: success
+        message: Payment routes fetched
+        data:
+          routes:
+            - id: route-uuid-001
+              name: Supplier collection
+              status: active
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              customerName: Acme Ltd
+              origin:
+                chainId: 792703809
+                chainName: Solana
+                currency: So11111111111111111111111111111111111111112
+                symbol: SOL
+                acceptableTokens: []
+              destination:
+                chainId: 137
+                chainName: Polygon
+                currency: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+                symbol: USDC
+                address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+              refundTo: null
+              depositAddress: "0xDepositAddress1234567890abcdef"
+              relayRequestId: req_abc123
+              strict: false
+              createdAt: "2026-06-26T09:00:00.000Z"
+              updatedAt: "2026-06-26T09:00:00.000Z"
+          total: 1
+
+    CreatePaymentRouteResponse:
+      value:
+        status: success
+        message: Payment route created
+        data:
+          id: route-uuid-001
+          name: Supplier collection
+          status: active
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          origin:
+            chainId: 792703809
+            chainName: Solana
+            currency: So11111111111111111111111111111111111111112
+            symbol: SOL
+            acceptableTokens: []
+          destination:
+            chainId: 137
+            chainName: Polygon
+            currency: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+            symbol: USDC
+            address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+          refundTo: null
+          depositAddress: "0xDepositAddress1234567890abcdef"
+          relayRequestId: req_abc123
+          strict: false
+          createdAt: "2026-06-26T09:00:00.000Z"
+          updatedAt: "2026-06-26T09:00:00.000Z"
+
+    ListChainsResponse:
+      value:
+        status: success
+        message: Supported chains fetched
+        data:
+          - chainId: 792703809
+            name: solana
+            displayName: Solana
+            vmType: svm
+          - chainId: 137
+            name: polygon
+            displayName: Polygon
+            vmType: evm
+
+    ListCorridorsResponse:
+      value:
+        status: success
+        message: Recommended corridors fetched
+        data:
+          settlements:
+            - chainId: 137
+              symbol: USDC
+              address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+          corridors:
+            - originChainId: 792703809
+              destinationChainId: 137
+              label: Solana → Polygon (USDC)
+
+    CurrencyConfigResponse:
+      value:
+        status: success
+        message: Currency config fetched
+        data:
+          settlements:
+            - chainId: 137
+              currencies:
+                - symbol: USDC
+                  address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+
+    ListDepositsResponse:
+      value:
+        status: success
+        message: Payment route deposits fetched
+        data:
+          deposits:
+            - id: dep-uuid-001
+              paymentRouteId: route-uuid-001
+              routeName: Supplier collection
+              relayRequestId: req_abc123
+              status: success
+              origin:
+                chainId: 792703809
+                symbol: USDC
+              destination:
+                chainId: 137
+                symbol: USDC
+              amountIn: "250"
+              amountInUsd: "250.00"
+              amountOut: "249.50"
+              amountOutUsd: "249.50"
+              depositTxHash: "0xabc123def456"
+              inTxHashes: ["0xabc123def456"]
+              outTxHashes: ["0xdef456abc123"]
+              failReason: null
+              relayUpdatedAt: "2026-06-26T11:00:00.000Z"
+              createdAt: "2026-06-26T11:00:00.000Z"
+          total: 1
+
+    SyncDepositsResponse:
+      value:
+        status: success
+        message: Payment route deposits synced
+        data:
+          synced: 2
+          routeId: route-uuid-001
+
+    ArchiveRouteResponse:
+      value:
+        status: success
+        message: Payment route archived
+        data:
+          id: route-uuid-001
+          name: Supplier collection
+          status: archived
+          customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          customerName: Acme Ltd
+          origin:
+            chainId: 792703809
+            chainName: Solana
+            currency: So11111111111111111111111111111111111111112
+            symbol: SOL
+            acceptableTokens: []
+          destination:
+            chainId: 137
+            chainName: Polygon
+            currency: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+            symbol: USDC
+            address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+          refundTo: null
+          depositAddress: "0xDepositAddress1234567890abcdef"
+          relayRequestId: req_abc123
+          strict: false
+          createdAt: "2026-06-26T09:00:00.000Z"
+          updatedAt: "2026-06-26T12:00:00.000Z"
+
+    ErrorResponse:
+      value:
+        status: error
+        message: Invalid API key
+
 paths:
   /rates:
     get:
       operationId: listRates
       summary: List exchange rates
-      description: Returns cached Jupiter rates for all configured pairs. Requires `fx:read` scope.
+      description: Returns cached FX rates for all configured swap pairs. Requires `fx:read` scope.
       tags: [Rates]
       security:
         - ApiKeyAuth: []
@@ -301,12 +855,19 @@ paths:
                         type: object
                         properties:
                           chain: { type: string }
-                          provider: { type: string }
                           updatedAt: { type: string, nullable: true }
                           refreshing: { type: boolean }
                           rates: { type: array, items: { type: object } }
+              examples:
+                success:
+                  $ref: "#/components/examples/ListRatesResponse"
         "401":
           description: Invalid or missing API key
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: "#/components/examples/ErrorResponse"
         "403":
           description: Missing required scope
 
@@ -321,6 +882,11 @@ paths:
       responses:
         "200":
           description: Currencies fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListCurrenciesResponse"
 
   /rates/{from}/{to}:
     get:
@@ -346,17 +912,31 @@ paths:
       responses:
         "200":
           description: Rate fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/PairRateResponse"
         "503":
           description: Rate not available yet
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Rate for USDC/EURC not available yet. Try again shortly.
 
   /swaps:
     get:
       operationId: listSwaps
       summary: List swaps
-      description: Returns up to 50 swaps for your organisation, newest first. Requires `transfers:read` scope.
+      description: Returns up to 50 swaps for your organisation, newest first. Optionally filter by `customerId`. Requires `transfers:read` scope.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Swaps fetched
@@ -376,12 +956,15 @@ paths:
                               $ref: "#/components/schemas/Swap"
                           total:
                             type: integer
+              examples:
+                success:
+                  $ref: "#/components/examples/ListSwapsResponse"
     post:
       operationId: createSwap
       summary: Create swap
       description: |
-        Creates a Solana swap and returns a deposit address. Deposit the `from` token to `depositAddress` before expiry.
-        Requires `transfers:write` scope and an `Idempotency-Key` header.
+        Creates a Solana stablecoin swap and returns a deposit address. Deposit the `from` token to `depositAddress` before expiry.
+        Tied to `customerId` (defaults to org primary customer). Requires `transfers:write` scope and an `Idempotency-Key` header.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
@@ -414,10 +997,27 @@ paths:
                     properties:
                       data:
                         $ref: "#/components/schemas/Swap"
+              examples:
+                success:
+                  $ref: "#/components/examples/CreateSwapResponse"
         "400":
           description: Missing Idempotency-Key
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Idempotency-Key header is required for API key requests
         "422":
           description: Validation error or unsupported pair
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Unsupported currency pair
 
   /swaps/{id}:
     get:
@@ -437,8 +1037,22 @@ paths:
       responses:
         "200":
           description: Swap fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/GetSwapResponse"
+                failed:
+                  $ref: "#/components/examples/GetSwapFailedResponse"
         "404":
           description: Swap not found
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Swap not found
 
   /swaps/{id}/cancel:
     post:
@@ -459,8 +1073,20 @@ paths:
       responses:
         "200":
           description: Swap cancelled
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CancelSwapResponse"
         "409":
           description: Swap cannot be cancelled in current status
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Swap cannot be cancelled in current status
 
   /customers:
     get:
@@ -473,6 +1099,11 @@ paths:
       responses:
         "200":
           description: Customers fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListCustomersResponse"
     post:
       operationId: createCustomer
       summary: Create customer
@@ -491,18 +1122,30 @@ paths:
       responses:
         "201":
           description: Customer created
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CreateCustomerResponse"
 
   /transactions:
     get:
       operationId: listTransactions
       summary: List transactions
-      description: Unified ledger of payment-route deposits and swaps. Requires `transfers:read` scope.
+      description: Unified ledger of payment-route deposits and swaps. Optionally filter by `customerId`. Requires `transfers:read` scope.
       tags: [Transactions]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Transactions fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListTransactionsResponse"
 
   /payment-routes/chains:
     get:
@@ -515,6 +1158,11 @@ paths:
       responses:
         "200":
           description: Supported chains fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListChainsResponse"
 
   /payment-routes/corridors:
     get:
@@ -527,6 +1175,11 @@ paths:
       responses:
         "200":
           description: Recommended corridors fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListCorridorsResponse"
 
   /payment-routes/currencies:
     get:
@@ -539,6 +1192,11 @@ paths:
       responses:
         "200":
           description: Currency config fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CurrencyConfigResponse"
 
   /payment-routes:
     get:
@@ -551,10 +1209,15 @@ paths:
       responses:
         "200":
           description: Payment routes fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListPaymentRoutesResponse"
     post:
       operationId: createPaymentRoute
       summary: Create payment route
-      description: Creates a cross-chain payment route via Relay. Requires `collections:write` scope and `Idempotency-Key`.
+      description: Creates a cross-chain payment route. Requires `collections:write` scope and `Idempotency-Key`.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -569,6 +1232,11 @@ paths:
       responses:
         "201":
           description: Payment route created
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CreatePaymentRouteResponse"
 
   /payment-routes/deposits:
     get:
@@ -581,6 +1249,11 @@ paths:
       responses:
         "200":
           description: Payment route deposits fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListDepositsResponse"
 
   /payment-routes/{id}:
     get:
@@ -600,8 +1273,20 @@ paths:
       responses:
         "200":
           description: Payment route fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CreatePaymentRouteResponse"
         "404":
           description: Not found
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Payment route not found
     delete:
       operationId: archivePaymentRoute
       summary: Archive payment route
@@ -620,6 +1305,11 @@ paths:
       responses:
         "200":
           description: Payment route archived
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ArchiveRouteResponse"
 
   /payment-routes/{id}/deposits:
     get:
@@ -639,12 +1329,17 @@ paths:
       responses:
         "200":
           description: Deposits fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListDepositsResponse"
 
   /payment-routes/{id}/deposits/sync:
     post:
       operationId: syncPaymentRouteDeposits
       summary: Sync route deposits
-      description: Pulls latest deposit state from Relay. Requires `collections:write` scope and `Idempotency-Key`.
+      description: Pulls latest deposit state for the route. Requires `collections:write` scope and `Idempotency-Key`.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -659,6 +1354,11 @@ paths:
       responses:
         "200":
           description: Deposits synced
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/SyncDepositsResponse"
 
   /payment-routes/{id}/pause:
     post:
@@ -679,6 +1379,37 @@ paths:
       responses:
         "200":
           description: Payment route paused
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Payment route paused
+                    data:
+                      id: route-uuid-001
+                      name: Supplier collection
+                      status: paused
+                      customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      customerName: Acme Ltd
+                      origin:
+                        chainId: 792703809
+                        chainName: Solana
+                        currency: So11111111111111111111111111111111111111112
+                        symbol: SOL
+                        acceptableTokens: []
+                      destination:
+                        chainId: 137
+                        chainName: Polygon
+                        currency: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+                        symbol: USDC
+                        address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+                      refundTo: null
+                      depositAddress: "0xDepositAddress1234567890abcdef"
+                      relayRequestId: req_abc123
+                      strict: false
+                      createdAt: "2026-06-26T09:00:00.000Z"
+                      updatedAt: "2026-06-26T12:00:00.000Z"
 
   /payment-routes/{id}/activate:
     post:
@@ -699,3 +1430,8 @@ paths:
       responses:
         "200":
           description: Payment route activated
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CreatePaymentRouteResponse"

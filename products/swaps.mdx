@@ -1,10 +1,12 @@
 ---
 title: "Swaps"
 sidebarTitle: "Swaps"
-description: "Convert stablecoins on Solana — create a swap, deposit, and track settlement via Jupiter."
+description: "Convert stablecoins on Solana — create a swap, deposit, and track settlement."
 ---
 
-Swaps convert one Solana SPL token into another (e.g. USDC → EURC) via Jupiter. You receive a **deposit address**; once funded, RemitFlex executes the swap and pays out to your destination wallet.
+Swaps convert one Solana SPL token into another (e.g. USDC → EURC). You receive a **deposit address**; once funded, RemitFlex executes the conversion and pays out to your destination wallet.
+
+Every swap is tied to a **customer** under your organisation. Omit `customerId` to use your org's primary customer (created at signup).
 
 **Required scopes:** `fx:read`, `transfers:read`, `transfers:write`
 
@@ -22,7 +24,7 @@ For cross-chain collection, use [Payment routes](/products/payment-routes) inste
 |--------|---------|
 | `awaiting_deposit` | Waiting for deposit to `depositAddress` |
 | `deposit_received` | Deposit detected on-chain |
-| `swapping` | Jupiter swap executing |
+| `swapping` | Conversion executing |
 | `completed` | Output sent to `destinationAddress` |
 | `failed` / `expired` / `cancelled` | Terminal states |
 
@@ -37,7 +39,8 @@ curl -X POST https://api.remitflex.io/v1/swaps \
     "from": "USDC",
     "to": "EURC",
     "amount": 100,
-    "destinationAddress": "YOUR_SOLANA_WALLET"
+    "destinationAddress": "YOUR_SOLANA_WALLET",
+    "customerId": "optional-customer-uuid"
   }'
 ```
 
@@ -46,8 +49,16 @@ curl -X POST https://api.remitflex.io/v1/swaps \
 | `from` / `to` | Currency codes (see `GET /v1/rates/currencies`) |
 | `amount` | Human-readable input amount |
 | `destinationAddress` | Solana address receiving output tokens |
+| `customerId` | Optional. Defaults to your org's primary customer |
 
 Send the `from` token to `depositAddress` before `expiresAt`.
+
+## List swaps by customer
+
+```bash
+curl "https://api.remitflex.io/v1/swaps?customerId=CUSTOMER_UUID" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
 
 ## Track and cancel
 
@@ -61,6 +72,21 @@ curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)"
 ```
+
+## Failed swaps
+
+When a swap reaches `failed`, the `errorMessage` field contains a **human-readable** reason — never raw Solana simulation logs or program errors.
+
+```json
+{
+  "status": "failed",
+  "errorMessage": "This conversion could not be completed because there was not enough SOL to pay network fees. Please contact support with your swap ID — your deposit will be reviewed."
+}
+```
+
+Common causes include insufficient fee-payer balance, slippage beyond tolerance, or on-chain simulation failure. Surface `errorMessage` to your user and include the swap `id` when contacting RemitFlex support.
+
+The same sanitized message appears on swap rows in [`GET /transactions`](/api-reference/list-transactions) under `receipt.errorMessage`.
 
 ## API reference
 

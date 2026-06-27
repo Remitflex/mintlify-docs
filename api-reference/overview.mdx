@@ -4,7 +4,7 @@ sidebarTitle: "Overview"
 description: "Base URLs, response format, rate limits, authentication, and idempotency for the RemitFlex REST API."
 ---
 
-The RemitFlex API is a RESTful JSON API for Solana swaps (Jupiter), cross-chain payment routes (Relay), exchange rates, customers, and a unified transaction ledger.
+The RemitFlex API is a RESTful JSON API for stablecoin swaps, cross-chain payment routes, exchange rates, customers, and a unified transaction ledger.
 
 ## Base URLs
 
@@ -99,9 +99,9 @@ When exceeded, the API returns `429 Too Many Requests`.
 
 | Resource | Description |
 |----------|-------------|
-| Rates | Cached Jupiter FX rates — `GET /rates` |
-| Swaps | Solana token swaps — `GET/POST /swaps` |
-| Payment routes | Cross-chain collection via Relay — `GET/POST /payment-routes` |
+| Rates | Cached FX rates for swap pairs — `GET /rates` |
+| Swaps | Same-chain stablecoin swaps — `GET/POST /swaps` |
+| Payment routes | Cross-chain collection — `GET/POST /payment-routes` |
 | Customers | Organisation customers — `GET/POST /customers` |
 | Transactions | Unified swap + payment-route ledger — `GET /transactions` |
 

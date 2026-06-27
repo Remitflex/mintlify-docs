@@ -1,12 +1,12 @@
 ---
 title: "Payment routes"
 sidebarTitle: "Payment routes"
-description: "Cross-chain stablecoin collection — create routes, share deposit addresses, and sync deposits via Relay."
+description: "Cross-chain stablecoin collection — create routes, share deposit addresses, and sync deposits."
 ---
 
 Payment routes let payers send stablecoins on an **origin chain** and receive funds on a **destination chain**. Each route has a persistent deposit address and status (`active`, `paused`, `archived`).
 
-Powered by Relay. Ideal for African fintechs collecting USDC from diaspora or global payers and settling to a treasury wallet.
+Ideal for African fintechs collecting USDC from diaspora or global payers and settling to a treasury wallet. Every route is tied to a **customer** under your organisation.
 
 **Required scopes:** `collections:read`, `collections:write`
 
@@ -57,7 +57,7 @@ curl https://api.remitflex.io/v1/payment-routes/deposits \
 curl https://api.remitflex.io/v1/payment-routes/{id}/deposits \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 
-# Pull latest from Relay
+# Pull latest deposit state
 curl -X POST https://api.remitflex.io/v1/payment-routes/{id}/deposits/sync \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)"
@@ -78,7 +78,7 @@ curl -X DELETE https://api.remitflex.io/v1/payment-routes/{id} \
 
 ## Link to customers
 
-Attach a `customerId` when creating a route to associate deposits with a [customer](/products/customers) record for reporting.
+Attach a `customerId` when creating a route (or omit to use your org's primary customer). Filter the [transactions ledger](/products/transactions) by the same `customerId`.
 
 ## API reference
 

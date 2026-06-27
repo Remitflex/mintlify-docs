@@ -4,15 +4,15 @@ sidebarTitle: "Customers"
 description: "Organise payers and beneficiaries under your organisation for swaps and payment routes."
 ---
 
-Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup; you can add more for reporting and route attribution.
+Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup (representing the organisation itself). Existing swaps and routes without a customer are attributed to this primary customer.
 
 **Required scopes:** `transfers:read` (list), `transfers:write` (create)
 
 ## Why customers matter
 
-- Attach `customerId` to [payment routes](/products/payment-routes) for per-counterparty collection
-- Swaps resolve against your org's customer context for ledgering
-- `GET /v1/transactions` includes `customerName` for reconciliation
+- Attach `customerId` to [swaps](/products/swaps) and [payment routes](/products/payment-routes) for per-counterparty tracking
+- Filter `GET /v1/swaps?customerId=...` and `GET /v1/transactions?customerId=...`
+- Reconcile by customer name in the transactions ledger
 
 ## List customers
 
@@ -65,7 +65,7 @@ curl -X POST https://api.remitflex.io/v1/customers \
 
 ## Dashboard
 
-You can also view customers at [dashboard.kaprex.io](https://dashboard.kaprex.io). API keys cannot manage dashboard-only settings.
+View and filter activity per customer at [dashboard.remitflex.io](https://dashboard.remitflex.io) — **Overview**, **Transactions**, **Payment routes**, and per-customer receipts. API keys cannot manage dashboard-only settings.
 
 ## API reference
 

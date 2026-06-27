@@ -15,31 +15,47 @@ curl https://api.remitflex.io/v1/transactions \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
+## Filter by customer
+
+```bash
+curl "https://api.remitflex.io/v1/transactions?customerId=CUSTOMER_UUID" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Returns swaps and payment-route deposits for that customer only.
+
 Each row includes:
 
 | Field | Description |
 |-------|-------------|
-| `kind` | `swap` or `payment_route` |
+| `kind` | `swap` (**Stablecoin convert** on Solana) or `payment_route` (**Crypto to crypto** cross-chain collection) |
 | `customerId` / `customerName` | Linked counterparty |
 | `status` | Settlement status |
 | `amount` | Human-readable amount string |
 | `destination` | Wallet or route destination |
-| `receipt` | Provider-specific metadata (signatures, route IDs) |
+| `receipt` | Settlement metadata — signatures, route IDs, amounts, and user-safe failure messages |
+
+For **payment-route** rows, `receipt.origin` and `receipt.destination` summarise what was sent and received (chain name, token symbol, amount, USD value). Present these as human-readable strings in your UI — do not expose raw `chainId` blobs to end users.
+
+For **swap** rows, use top-level `amount` / `destination` plus `receipt.swapTxSignature`, `receipt.payoutTxSignature`, and `receipt.errorMessage` when failed.
+
+For failed swaps, `receipt.errorMessage` is a user-safe explanation (no raw Solana logs). Payment-route deposits may include `receipt.failReason` with the same treatment.
+
 | `createdAt` | ISO timestamp |
 
 Returns up to **200** most recent events, swaps and deposits merged by time.
 
 ## Sync behaviour
 
-Listing transactions triggers a **deposit sync** for your org's payment routes before returning results, so route deposits are as fresh as Relay allows.
+Listing transactions triggers a **deposit sync** for your org's payment routes before returning results.
 
 For explicit sync on one route, use `POST /v1/payment-routes/{id}/deposits/sync`.
 
 ## Reconciliation pattern
 
-1. Poll `GET /v1/transactions` on a schedule, or after webhook support ships
+1. Poll `GET /v1/transactions` on a schedule, or filter by `customerId` per counterparty
 2. Match `id` + `kind` to your internal payment records
-3. Use `receipt` for on-chain proof (tx signatures, Relay IDs)
+3. Use `receipt` for on-chain proof (transaction signatures, route IDs)
 
 ## API reference
 

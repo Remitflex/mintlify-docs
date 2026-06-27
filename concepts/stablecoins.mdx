@@ -4,7 +4,7 @@ sidebarTitle: "Stablecoins"
 description: "Why RemitFlex uses stablecoins and which assets are supported today."
 ---
 
-Stablecoins are blockchain tokens pegged to fiat (usually USD or EUR). RemitFlex uses them as the settlement layer so you get fast, programmable money movement without building wallet or DEX infrastructure yourself.
+Stablecoins are blockchain tokens pegged to fiat (usually USD or EUR). RemitFlex uses them as the settlement layer so you get fast, programmable money movement without building wallet or exchange infrastructure yourself.
 
 ## Why stablecoins for cross-border
 
@@ -17,10 +17,10 @@ Stablecoins are blockchain tokens pegged to fiat (usually USD or EUR). RemitFlex
 
 ## What RemitFlex supports today
 
-| Product | Assets | Rail |
-|---------|--------|------|
-| **Swaps** | USDC, EURC, and other Jupiter pairs on Solana | Jupiter |
-| **Payment routes** | Stablecoins on supported origin/destination chains | Relay |
+| Product | Assets |
+|---------|--------|
+| **Swaps** | USDC, EURC, and other supported pairs on Solana |
+| **Payment routes** | Stablecoins on supported origin/destination chains |
 
 Check live support before integrating:
 
@@ -40,13 +40,13 @@ curl https://api.remitflex.io/v1/payment-routes/corridors \
 
 **EURC** — Circle-issued EUR stablecoin. Useful for European partners without a USD→EUR conversion step.
 
-**USDT** — Available on some corridors via Relay depending on chain liquidity. Check `/payment-routes/currencies` for your route.
+**USDT** — Available on some corridors depending on chain liquidity. Check `/payment-routes/currencies` for your route.
 
 ## What you do not manage
 
 RemitFlex handles deposit addresses, on-chain execution, and status tracking. Your integration:
 
-1. Creates a swap or payment route
+1. Creates a swap or payment route (optionally tied to a [customer](/products/customers))
 2. Shares the deposit address with the payer (or funds it yourself)
 3. Polls status or reads the [transactions ledger](/products/transactions)
 
