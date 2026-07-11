@@ -4,18 +4,18 @@ sidebarTitle: "Authentication"
 description: "Create API keys in the dashboard, authenticate programmatic requests with Bearer tokens, and understand scope and idempotency requirements."
 ---
 
-RemitFlex has two authentication modes:
+Remitflex has two authentication modes:
 
 | Mode | Used for | Header |
 |------|----------|--------|
 | **Dashboard JWT** | Login, signup, API key management, admin ops | `Authorization: Bearer <accessToken>` |
-| **API key** | Swaps, payment routes, rates, customers, transactions | `Authorization: Bearer rmf_live_...` or `rmf_test_...` |
+| **API key** | Payment routes, payment links, local fiat, rates, customers, transactions | `Authorization: Bearer rmf_live_...` or `rmf_test_...` |
 
 This guide covers **API keys** for programmatic integrations. Dashboard login uses email OTP and JWT — see your dashboard app for that flow.
 
 ## Creating an API key
 
-API keys are created in the [RemitFlex Dashboard](https://dashboard.remitflex.io) after you log in. Keys cannot be created via the public API using another API key.
+API keys are created in the [Remitflex Dashboard](https://dashboard.remitflex.io) after you log in. Keys cannot be created via the public API using another API key.
 
 <Steps>
   <Step title="Log in to the dashboard">
@@ -48,12 +48,12 @@ Send the key as a Bearer token on every business API request:
 <CodeGroup>
   ```bash curl
   curl --request GET \
-    --url https://api.remitflex.io/v1/rates \
+    --url https://api.remitflex.io/v1/transactions \
     --header "Authorization: Bearer $REMITFLEX_API_KEY"
   ```
 
   ```javascript JavaScript
-  const response = await fetch("https://api.remitflex.io/v1/rates", {
+  const response = await fetch("https://api.remitflex.io/v1/transactions", {
     headers: {
       Authorization: `Bearer ${process.env.REMITFLEX_API_KEY}`,
     },
@@ -66,7 +66,7 @@ Send the key as a Bearer token on every business API request:
   import requests
 
   response = requests.get(
-      "https://api.remitflex.io/v1/rates",
+      "https://api.remitflex.io/v1/transactions",
       headers={"Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}"},
   )
   data = response.json()["data"]
@@ -90,13 +90,17 @@ Each key is issued with one or more scopes. Scopes are enforced on API-key reque
 
 | Scope | Endpoints |
 |-------|-----------|
-| `fx:read` | `GET /v1/rates`, `/v1/rates/currencies`, `/v1/rates/:from/:to` |
-| `transfers:read` | `GET /v1/swaps`, `/v1/swaps/:id`, `/v1/transactions`, `/v1/customers` |
-| `transfers:write` | `POST /v1/swaps`, `/v1/swaps/:id/cancel`, `/v1/customers` |
-| `collections:read` | `GET /v1/payment-routes` and related read endpoints |
-| `collections:write` | `POST /v1/payment-routes`, pause, activate, sync, archive |
+| `fx:read` | `GET /v1/fiat/rates/:token/:amount/:currency` |
+| `transfers:read` | `GET /v1/transactions`, `/v1/customers` |
+| `transfers:write` | `POST /v1/customers` |
+| `collections:read` | `GET /v1/payment-routes`, `GET /v1/collections`, and related read endpoints |
+| `collections:write` | `POST /v1/payment-routes`, `POST /v1/collections`, pause, activate, sync, cancel, logo upload |
+| `offramps:read` | `GET /v1/offramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
+| `offramps:write` | `POST /v1/offramps`, `DELETE /v1/offramps/:orderId`, `PATCH .../external-transfer`, `POST /v1/fiat/verify-account` |
+| `onramps:read` | `GET /v1/onramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
+| `onramps:write` | `POST /v1/onramps`, `POST /v1/fiat/verify-account` |
+| `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
 | `wallets:read` / `wallets:write` | Reserved for future wallet APIs |
-| `payouts:read` / `payouts:write` | Reserved for future payout APIs |
 | `webhooks:read` / `webhooks:write` | Reserved for future webhook management |
 
 Grant the minimum scopes required. A read-only reporting tool only needs `transfers:read` and `fx:read`.

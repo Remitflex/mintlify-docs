@@ -11,9 +11,9 @@ List endpoints return items in a `data` envelope with a `total` count. Cursor-ba
 ```json
 {
   "status": "success",
-  "message": "Swaps fetched",
+  "message": "Payment routes fetched",
   "data": {
-    "swaps": [ ... ],
+    "paymentRoutes": [ ... ],
     "total": 12
   }
 }
@@ -23,8 +23,7 @@ List endpoints return items in a `data` envelope with a `total` count. Cursor-ba
 
 | Endpoint | Max items | Sort order |
 |----------|-----------|------------|
-| `GET /swaps` | 50 | `createdAt` descending |
-| `GET /transactions` | 200 | Most recent first (deposits + swaps merged) |
+| `GET /transactions` | 200 | Most recent first (route deposits merged) |
 | `GET /customers` | All org customers | `createdAt` descending |
 | `GET /payment-routes` | All org routes | `createdAt` descending |
 | `GET /payment-routes/deposits` | 200 | `relayUpdatedAt` descending |
@@ -35,4 +34,4 @@ List endpoints return items in a `data` envelope with a `total` count. Cursor-ba
 
 ## Filtering
 
-List endpoints do not support query-parameter filtering today. Use `GET /swaps/{id}` or `GET /payment-routes/{id}` to fetch a single resource by ID.
+List endpoints do not support query-parameter filtering today. Use `GET /payment-routes/{id}` to fetch a single resource by ID.

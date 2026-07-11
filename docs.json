@@ -1,22 +1,24 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "luma",
-  "name": "RemitFlex",
+  "name": "Remitflex",
   "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
+    "primary": "#0F766E",
+    "light": "#14B8A6",
+    "dark": "#0D9488"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
   "api": {
     "openapi": "openapi.yaml",
+    "url": "full",
     "playground": {
       "display": "interactive",
-      "proxy": true
+      "proxy": false,
+      "credentials": true
     },
     "examples": {
       "languages": ["bash", "javascript", "python"],
@@ -52,35 +54,47 @@
             ]
           },
           {
-            "group": "Platform",
-            "pages": [
-              "concepts/platform",
-              "concepts/stablecoins",
-              "concepts/african-corridors"
-            ]
-          },
-          {
-            "group": "Swaps",
-            "pages": [
-              "products/swaps"
-            ]
-          },
-          {
-            "group": "Payment routes",
-            "pages": [
-              "products/payment-routes"
-            ]
-          },
-          {
             "group": "Customers",
             "pages": [
               "products/customers"
             ]
           },
           {
+            "group": "Platform",
+            "pages": [
+              "concepts/platform",
+              "concepts/stablecoins"
+            ]
+          },
+          {
+            "group": "Networks & corridors",
+            "pages": [
+              "concepts/networks-and-corridors",
+              "concepts/african-corridors"
+            ]
+          },
+          {
+            "group": "Collect payments",
+            "pages": [
+              "products/payment-links",
+              "products/payment-routes"
+            ]
+          },
+          {
+            "group": "Local fiat",
+            "pages": [
+              "products/fiat-rails"
+            ]
+          },
+          {
             "group": "Ledger",
             "pages": [
-              "products/transactions",
+              "products/transactions"
+            ]
+          },
+          {
+            "group": "Rates",
+            "pages": [
               "products/rates"
             ]
           },
@@ -108,28 +122,25 @@
             ]
           },
           {
-            "group": "Rates",
+            "group": "Customers",
             "pages": [
-              "GET /rates",
-              "GET /rates/currencies",
-              "GET /rates/{from}/{to}"
+              "GET /customers",
+              "POST /customers"
             ]
           },
           {
-            "group": "Swaps",
+            "group": "Networks & corridors",
             "pages": [
-              "GET /swaps",
-              "POST /swaps",
-              "GET /swaps/{id}",
-              "POST /swaps/{id}/cancel"
+              "GET /payment-routes/chains",
+              "GET /payment-routes/corridors",
+              "GET /payment-routes/currencies",
+              "GET /collections/chains",
+              "GET /collections/corridors"
             ]
           },
           {
             "group": "Payment routes",
             "pages": [
-              "GET /payment-routes/chains",
-              "GET /payment-routes/corridors",
-              "GET /payment-routes/currencies",
               "GET /payment-routes",
               "POST /payment-routes",
               "GET /payment-routes/deposits",
@@ -142,10 +153,53 @@
             ]
           },
           {
-            "group": "Customers",
+            "group": "Payment links",
             "pages": [
-              "GET /customers",
-              "POST /customers"
+              "GET /collections",
+              "POST /collections",
+              "GET /collections/{id}",
+              "PATCH /collections/{id}",
+              "POST /collections/{id}/sync",
+              "POST /collections/{id}/cancel",
+              "POST /collections/{id}/logo",
+              "PATCH /collections/{id}/embed-config",
+              "GET /pay/{id}/embed-config",
+              "GET /pay/{id}",
+              "GET /pay/{id}/logo",
+              "POST /pay/{id}/quote"
+            ]
+          },
+          {
+            "group": "Local fiat",
+            "pages": [
+              {
+                "group": "Offramps",
+                "pages": [
+                  "GET /offramps",
+                  "POST /offramps",
+                  "GET /offramps/{orderId}",
+                  "PATCH /offramps/{orderId}/external-transfer",
+                  "DELETE /offramps/{orderId}",
+                  "GET /offramps/by-external-transfer/{externalTransferId}"
+                ]
+              },
+              {
+                "group": "Onramps",
+                "pages": [
+                  "GET /onramps",
+                  "POST /onramps",
+                  "GET /onramps/{orderId}"
+                ]
+              },
+              {
+                "group": "Reference data",
+                "pages": [
+                  "GET /fiat/currencies",
+                  "GET /fiat/institutions/{currencyCode}",
+                  "POST /fiat/verify-account",
+                  "GET /fiat/rates/{token}/{amount}/{currency}"
+                ]
+              }
             ]
           },
           {
@@ -158,10 +212,39 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/products/collections",
+      "destination": "/products/payment-links",
+      "permanent": true
+    },
+    {
+      "source": "/products/embed-widget",
+      "destination": "/products/payment-links#embed",
+      "permanent": true
+    },
+    {
+      "source": "/guides/testing-collections",
+      "destination": "/guides/testing",
+      "permanent": true
+    },
+    {
+      "source": "/guides/testing-payment-links",
+      "destination": "/guides/testing",
+      "permanent": true
+    }
+  ],
   "footer": {
     "socials": {
       "x": "https://x.com/remitflex",
       "linkedin": "https://linkedin.com/company/remitflex"
+    }
+  },
+  "seo": {
+    "metatags": {
+      "og:site_name": "Remitflex Docs",
+      "og:title": "Remitflex Documentation",
+      "twitter:title": "Remitflex Documentation"
     }
   }
 }

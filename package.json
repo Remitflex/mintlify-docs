@@ -1,0 +1,10 @@
+{
+  "name": "remitflex-docs",
+  "private": true,
+  "scripts": {
+    "dev": "mint dev --port 3333"
+  },
+  "devDependencies": {
+    "mint": "4.2.651"
+  }
+}

@@ -1,0 +1,147 @@
+---
+title: "Local fiat payouts and deposits"
+sidebarTitle: "Local fiat"
+description: "Pay local bank accounts from stablecoin, or collect fiat and receive stablecoin — through the Remitflex API."
+---
+
+Remitflex connects **stablecoins** and **local bank accounts** in African markets. You integrate once; we handle bank disbursement, virtual account deposits, FX quoting, and settlement tracking.
+
+| Product | Direction | Typical use |
+|---------|-----------|-------------|
+| **Offramps** | Stablecoin → local fiat | Pay a supplier's NGN bank account from your USDC treasury |
+| **Onramps** | Local fiat → stablecoin | Let a customer deposit NGN and receive USDC at their wallet |
+
+Both products follow the same pattern as payment routes: **create an order → fund it → track until settled** in the [transactions ledger](/products/transactions).
+
+## Before you create an order
+
+Use the reference endpoints to discover what is supported and validate bank details before committing:
+
+| Endpoint | Purpose | Scope |
+|----------|---------|-------|
+| `GET /v1/fiat/currencies` | Supported local currencies | `offramps:read` or `onramps:read` |
+| `GET /v1/fiat/institutions/:code` | Banks for a currency | `offramps:read` or `onramps:read` |
+| `POST /v1/fiat/verify-account` | Confirm account name before payout | `offramps:write` or `onramps:write` |
+| `GET /v1/fiat/rates/:token/:amount/:currency` | Sell quote (stablecoin → fiat) | `fx:read` |
+
+```bash
+# Example: quote selling 100 USDC to NGN
+curl "https://api.remitflex.io/v1/fiat/rates/USDC/100/NGN" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+NGN is live today. Additional currencies appear in `/fiat/currencies` as they become available — do not hardcode.
+
+## Offramps — pay a local bank account
+
+Send stablecoin; the recipient receives fiat in their bank account.
+
+<Steps>
+  <Step title="Get a rate">
+    Call `GET /v1/fiat/rates/:token/:amount/:currency` and note the quoted rate. You pass this rate when creating the order.
+  </Step>
+  <Step title="Create the order">
+    `POST /v1/offramps` with recipient bank details, `amount`, `rate`, `returnAddress` (where funds return if the order fails), `reference`, and a [customer](/products/customers) `customerId`.
+  </Step>
+  <Step title="Fund the order">
+    Send the exact stablecoin amount to the `receiveAddress` in the response before `validUntil`.
+  </Step>
+  <Step title="Link your transfer">
+    After your on-chain transfer succeeds, call `PATCH /v1/offramps/:orderId/external-transfer` with your internal transfer ID. This ties your funding transaction to the order so settlement can proceed.
+  </Step>
+  <Step title="Track">
+    Poll `GET /v1/offramps/:orderId` or reconcile via `GET /v1/transactions` (`kind: offramp`).
+  </Step>
+</Steps>
+
+Cancel an unfunded order with `DELETE /v1/offramps/:orderId`. You cannot cancel after linking an external transfer.
+
+**Scopes:** `offramps:read`, `offramps:write`  
+The legacy `payouts:*` scopes still work as aliases for offramps.
+
+### Example — create offramp
+
+```bash
+curl -X POST https://api.remitflex.io/v1/offramps \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "cus_abc123",
+    "amount": "100",
+    "rate": "1650.50",
+    "reference": "payout-inv-1042",
+    "returnAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "token": "USDC",
+    "network": "base",
+    "recipient": {
+      "institution": "058",
+      "accountIdentifier": "0123456789",
+      "accountName": "Ada Okafor",
+      "currency": "NGN"
+    }
+  }'
+```
+
+## Onramps — collect fiat, deliver stablecoin
+
+Create a virtual account; your user deposits local currency; stablecoin is delivered to the wallet you specify.
+
+<Steps>
+  <Step title="Create the order">
+    `POST /v1/onramps` with `destinationAddress`, `destinationAddressType` (`liquidation_address` or `main_wallet`), `refundAccount` (bank details for failed deposits), `amount`, and `customerId`.
+  </Step>
+  <Step title="Share deposit details">
+    The response includes a `deposit` object with bank name, account number, amount to transfer, and `validUntil`. Show these to your user.
+  </Step>
+  <Step title="Track settlement">
+    Poll `GET /v1/onramps/:orderId?poll=true` to refresh status, or read `GET /v1/transactions` (`kind: onramp`).
+  </Step>
+</Steps>
+
+When settlement completes, the response includes `settlementTxHash` and `settledUsdcAmount`.
+
+**Scopes:** `onramps:read`, `onramps:write`
+
+### Example — create onramp
+
+```bash
+curl -X POST https://api.remitflex.io/v1/onramps \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "cus_abc123",
+    "amount": "50000",
+    "sourceCurrency": "NGN",
+    "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "destinationAddressType": "main_wallet",
+    "destinationNetwork": "base",
+    "destinationCurrency": "USDC",
+    "refundAccount": {
+      "institution": "058",
+      "accountIdentifier": "0123456789",
+      "accountName": "Ada Okafor"
+    }
+  }'
+```
+
+## Reconciliation
+
+Offramps and onramps appear in the unified ledger alongside payment routes and payment links:
+
+```bash
+curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+| `kind` | Product |
+|--------|---------|
+| `offramp` | Stablecoin → local fiat payout |
+| `onramp` | Local fiat deposit → stablecoin delivery |
+
+Filter by `customerId` to build per-user payout or funding history.
+
+<Note>
+  Outbound webhooks to your server are not available yet. Poll order endpoints or the transactions ledger for status updates.
+</Note>

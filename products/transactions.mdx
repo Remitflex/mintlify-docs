@@ -1,64 +1,37 @@
 ---
 title: "Transactions ledger"
 sidebarTitle: "Transactions"
-description: "Unified view of swaps and payment-route deposits for reconciliation and reporting."
+description: "Unified ledger of payment routes, payment links, offramps, and onramps."
 ---
 
-The transactions endpoint merges **swap activity** and **payment-route deposits** into one chronological feed — your single source of truth for what settled through RemitFlex.
+**Scope:** `transfers:read`  
+**Endpoint:** `GET /v1/transactions` (`?customerId=` optional)
 
-**Required scope:** `transfers:read`
+One endpoint for reconciliation across every Remitflex product. Returns up to 200 recent events, newest first. Triggers a deposit sync before responding.
 
-## List transactions
+| `kind` | Product |
+|--------|---------|
+| `payment_route` | Cross-chain route deposit |
+| `collection` | Payment link |
+| `offramp` | Stablecoin → local fiat payout |
+| `onramp` | Local fiat deposit → stablecoin delivery |
+
+Each row includes `status`, `amount`, `destination`, and `receipt` (signatures, settled amounts, safe error messages).
+
+## Filtering
 
 ```bash
-curl https://api.remitflex.io/v1/transactions \
+curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
-## Filter by customer
+Use `customerId` to build per-user history across routes, collections, and fiat orders.
 
-```bash
-curl "https://api.remitflex.io/v1/transactions?customerId=CUSTOMER_UUID" \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-```
+## Refreshing deposit status
 
-Returns swaps and payment-route deposits for that customer only.
+For on-chain products, you can force a sync before reading the ledger:
 
-Each row includes:
+- Payment routes: `POST /v1/payment-routes/{id}/deposits/sync`
+- Payment links: `POST /v1/collections/{id}/sync`
 
-| Field | Description |
-|-------|-------------|
-| `kind` | `swap` (**Stablecoin convert** on Solana) or `payment_route` (**Crypto to crypto** cross-chain collection) |
-| `customerId` / `customerName` | Linked counterparty |
-| `status` | Settlement status |
-| `amount` | Human-readable amount string |
-| `destination` | Wallet or route destination |
-| `receipt` | Settlement metadata — signatures, route IDs, amounts, and user-safe failure messages |
-
-For **payment-route** rows, `receipt.origin` and `receipt.destination` summarise what was sent and received (chain name, token symbol, amount, USD value). Present these as human-readable strings in your UI — do not expose raw `chainId` blobs to end users.
-
-For **swap** rows, use top-level `amount` / `destination` plus `receipt.swapTxSignature`, `receipt.payoutTxSignature`, and `receipt.errorMessage` when failed.
-
-For failed swaps, `receipt.errorMessage` is a user-safe explanation (no raw Solana logs). Payment-route deposits may include `receipt.failReason` with the same treatment.
-
-| `createdAt` | ISO timestamp |
-
-Returns up to **200** most recent events, swaps and deposits merged by time.
-
-## Sync behaviour
-
-Listing transactions triggers a **deposit sync** for your org's payment routes before returning results.
-
-For explicit sync on one route, use `POST /v1/payment-routes/{id}/deposits/sync`.
-
-## Reconciliation pattern
-
-1. Poll `GET /v1/transactions` on a schedule, or filter by `customerId` per counterparty
-2. Match `id` + `kind` to your internal payment records
-3. Use `receipt` for on-chain proof (transaction signatures, route IDs)
-
-## API reference
-
-<Card title="List transactions" icon="book-open" href="/api-reference/list-transactions">
-  `GET /transactions`
-</Card>
+For offramps and onramps, poll the order endpoint directly (`GET /v1/offramps/:orderId`, `GET /v1/onramps/:orderId?poll=true`).

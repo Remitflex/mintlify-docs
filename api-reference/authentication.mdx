@@ -1,8 +1,8 @@
 ---
 title: "API authentication"
 sidebarTitle: "Authentication"
-description: "Authenticate RemitFlex API requests with API keys, understand scopes, and handle auth errors."
-openapi: "GET /rates"
+description: "Authenticate Remitflex API requests with API keys, understand scopes, and handle auth errors."
+openapi: "GET /transactions"
 ---
 
 Business endpoints accept an API key as a Bearer token. Key management requires a dashboard JWT and is not available via API key.
@@ -16,12 +16,12 @@ Authorization: Bearer rmf_live_xxxxxxxxSSSSSSSSSSSSSSSSSSSSSS
 <CodeGroup>
 
 ```bash curl
-curl -X GET https://api.remitflex.io/v1/rates \
+curl -X GET https://api.remitflex.io/v1/transactions \
   -H "Authorization: Bearer rmf_test_xxxx"
 ```
 
 ```javascript JavaScript
-const res = await fetch("https://api.remitflex.io/v1/rates", {
+const res = await fetch("https://api.remitflex.io/v1/transactions", {
   headers: { Authorization: `Bearer ${process.env.REMITFLEX_API_KEY}` },
 });
 ```
@@ -29,7 +29,7 @@ const res = await fetch("https://api.remitflex.io/v1/rates", {
 ```python Python
 import os, requests
 r = requests.get(
-    "https://api.remitflex.io/v1/rates",
+    "https://api.remitflex.io/v1/transactions",
     headers={"Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}"},
 )
 ```
@@ -60,11 +60,11 @@ API keys use fine-grained scopes. Each endpoint in this reference requires speci
 
 | Scope | Access |
 |-------|--------|
-| `fx:read` | Exchange rates |
-| `transfers:read` | Read swaps, transactions, customers |
-| `transfers:write` | Create/cancel swaps, create customers |
-| `collections:read` | Read payment routes and deposits |
-| `collections:write` | Create and manage payment routes |
+| `fx:read` | Fiat sell rate quotes |
+| `transfers:read` | Read transactions, customers |
+| `transfers:write` | Create customers |
+| `collections:read` | Read payment routes and payment links |
+| `collections:write` | Create and manage payment routes and payment links |
 
 A `403` response with `Missing required scopes: ...` means the key is valid but lacks permission. Create a new key with the required scopes.
 

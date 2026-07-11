@@ -1,0 +1,94 @@
+---
+title: "Networks and corridors"
+sidebarTitle: "Networks & corridors"
+description: "See which networks and tokens you can accept, and where payments settle, before creating a link or route."
+---
+
+Before you create a [payment link](/products/payment-links) or [payment route](/products/payment-routes), check what Remitflex supports. Every response uses plain **network names** and **token symbols** — not internal IDs.
+
+**Scope:** `collections:read`
+
+## One call is enough
+
+```bash
+curl https://api.remitflex.io/v1/payment-routes/chains \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Returns three things:
+
+| Field | What it answers |
+|-------|-----------------|
+| `origins` | Networks payers can send from, with accepted `tokens` |
+| `settlements` | Where you receive (Base or Solana, USDC/USDT) |
+| `routing` | For each origin token, which settlement networks and tokens work |
+
+Payment links use the same shape at `/collections/chains`.
+
+## Example response
+
+```json
+{
+  "origins": [
+    { "key": "bitcoin", "network": "Bitcoin", "addressFormat": "bitcoin", "tokens": ["BTC"] },
+    { "key": "tron", "network": "Tron", "addressFormat": "tron", "tokens": ["USDT"] },
+    { "key": "bnb", "network": "BSC", "addressFormat": "evm", "tokens": ["BNB", "USDT", "USDC"] }
+  ],
+  "settlements": [
+    { "key": "base", "network": "Base", "addressFormat": "evm", "tokens": ["USDC", "USDT"] },
+    { "key": "solana", "network": "Solana", "addressFormat": "solana", "tokens": ["USDC", "USDT"] }
+  ],
+  "routing": [
+    {
+      "key": "bitcoin",
+      "network": "Bitcoin",
+      "token": "BTC",
+      "settlements": [
+        { "key": "base", "network": "Base", "tokens": ["USDC", "USDT"] },
+        { "key": "solana", "network": "Solana", "tokens": ["USDC", "USDT"] }
+      ]
+    },
+    {
+      "key": "tron",
+      "network": "Tron",
+      "token": "USDT",
+      "settlements": [
+        { "key": "base", "network": "Base", "tokens": ["USDC", "USDT"] },
+        { "key": "solana", "network": "Solana", "tokens": ["USDC", "USDT"] }
+      ]
+    }
+  ]
+}
+```
+
+Instead of 16 flat rows like `BTC → Base USDC`, `BTC → Base USDT`, `BTC → Solana USDC`… you get **one row per pay-in token** with settlement options nested.
+
+Use `key` from `origins` / `routing` as `originChainKey`, and `key` from `settlements` as `destinationChainKey`.
+
+## Legacy `/corridors` endpoint
+
+`GET /payment-routes/corridors` returns only `{ routing }` — the same grouped array. Prefer `/chains` so you fetch everything once.
+
+`GET /payment-routes/currencies` returns the same object as `/chains`.
+
+## Create a route
+
+Pick from the lists above — no path ID:
+
+```bash
+POST /v1/payment-routes
+{
+  "name": "Tron · USDT → Solana · USDC",
+  "originChainKey": "tron",
+  "destinationChainKey": "solana",
+  "destinationCurrency": "USDC",
+  "destinationAddress": "YourSolanaWallet...",
+  "customerId": "..."
+}
+```
+
+## Next steps
+
+- [Payment links](/products/payment-links) — hosted pay URLs
+- [Payment routes](/products/payment-routes) — persistent deposit addresses
+- [African flows](/concepts/african-corridors) — typical business use cases

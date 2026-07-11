@@ -1,40 +1,49 @@
 ---
 title: "Platform overview"
 sidebarTitle: "Overview"
-description: "How RemitFlex fits together — orgs, API keys, products, and settlement rails."
+description: "How Remitflex fits together — orgs, API keys, products, and the unified ledger."
 ---
 
-RemitFlex gives you **programmable stablecoin infrastructure** over HTTPS. You create resources (swaps, payment routes, customers), fund them on-chain, and read status from a unified ledger.
+Remitflex gives you **programmable money movement** over HTTPS. You create payment intents — collection routes, pay links, or local fiat orders — fund them, and read status from one ledger.
+
+Your integration never talks to blockchains, exchanges, or bank networks directly. You talk to Remitflex.
 
 ## Mental model
 
-The integration pattern is straightforward:
+Every product follows the same five steps:
 
 1. **Authenticate** with an API key (`rmf_test_` / `rmf_live_`)
-2. **Create** a payment intent (swap or payment route), optionally tied to a [customer](/products/customers)
-3. **Fund** the deposit address returned by the API
-4. **Track** status until settled
+2. **Create** a payment intent, optionally tied to a [customer](/products/customers)
+3. **Fund** — send crypto to a deposit address, or instruct your user to transfer to a bank account
+4. **Track** status until the order settles
 5. **Reconcile** via `GET /v1/transactions` — filter by `customerId` when needed
 
-RemitFlex is focused on **stablecoins** and **African use cases** — same-chain swaps and cross-chain collection routes, not a full fiat bank network (yet).
+```mermaid
+flowchart TD
+  A[Create intent] --> B[Fund]
+  B --> C[Track status]
+  C --> D[Reconcile in ledger]
+```
 
 ## Core objects
 
 | Object | Purpose |
 |--------|---------|
 | **Organisation** | Your tenant. Created at signup. Gets a primary customer automatically. |
-| **Customer** | A payer or counterparty under your org. Swaps and payment routes are tied to a customer. |
-| **Swap** | Same-chain stablecoin conversion with a time-bound deposit address. |
+| **Customer** | A payer, beneficiary, or counterparty under your org. Orders are tied to customers for reporting. |
+| **Payment link** | Cross-chain pay URL (fixed or open amount) with hosted pay page and embed. API: `/v1/collections`. |
 | **Payment route** | Cross-chain collection route with a persistent deposit address. |
-| **Transaction** | Ledger row linking swaps and route deposits for reporting. |
-| **API key** | Scoped programmatic access (`fx:read`, `transfers:write`, `collections:write`, etc.). |
+| **Offramp** | Stablecoin in → local fiat bank payout. |
+| **Onramp** | Local fiat deposit → stablecoin delivery to a wallet. |
+| **Transaction** | Ledger row for any product above — use for dashboards and reconciliation. |
+| **API key** | Scoped programmatic access. Created in the dashboard. |
 
 ## Authentication layers
 
 | Audience | Auth | Used for |
 |----------|------|----------|
 | Dashboard users | JWT (email + OTP) | Signup, login, API key management |
-| Integrations | API key (Bearer) | Swaps, routes, customers, rates, transactions |
+| Your backend | API key (Bearer) | All business endpoints |
 
 Dashboard: [dashboard.remitflex.io](https://dashboard.remitflex.io)
 
@@ -42,10 +51,12 @@ API base: `https://api.remitflex.io/v1`
 
 ## Products
 
-| Product | Typical use |
-|---------|-------------|
-| Swaps | Same-chain stablecoin conversion (e.g. USDC → EURC on Solana) |
-| Payment routes | Cross-chain pay-in (e.g. collect on Ethereum, deliver on Solana) |
+| Product | You send | Recipient gets | Best for |
+|---------|----------|----------------|----------|
+| **Payment links** | — (payer funds) | Stablecoin at your wallet | Invoices, checkout, embeddable pay buttons |
+| **Payment routes** | — (payer funds) | Stablecoin on your chosen chain | Persistent collection addresses |
+| **Offramps** | Stablecoin | Local fiat in a bank account | Supplier payouts, payroll, remittance to bank |
+| **Onramps** | — (user deposits fiat) | Stablecoin at a wallet | Funding crypto wallets from local currency |
 
 ## Scopes
 
@@ -53,18 +64,23 @@ API keys use fine-grained scopes. Grant only what each service needs:
 
 | Scope | Access |
 |-------|--------|
-| `fx:read` | Rates |
-| `transfers:read` | Read swaps, customers, transactions |
-| `transfers:write` | Create/cancel swaps, create customers |
-| `collections:read` | Read payment routes and deposits |
-| `collections:write` | Create and manage payment routes |
+| `fx:read` | Fiat sell quotes (`/v1/fiat/rates/...`) |
+| `transfers:read` | Read customers, transactions |
+| `transfers:write` | Create customers |
+| `collections:read` | Read payment routes and payment links |
+| `collections:write` | Create and manage payment routes and payment links |
+| `offramps:read` | Read offramp orders, fiat currencies and institutions |
+| `offramps:write` | Create/cancel offramps, verify bank accounts |
+| `onramps:read` | Read onramp orders, fiat currencies and institutions |
+| `onramps:write` | Create onramps, verify bank accounts |
+| `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
 
 See [Authentication](/authentication) for key format and idempotency rules.
 
 ## What we do not do yet
 
-- Fiat bank off-ramp (NGN, KES, etc. to local bank accounts)
-- Outbound merchant webhooks
-- Self-serve API key creation via API key (keys are created in the dashboard)
+- **Outbound webhooks** — poll order endpoints or the transactions ledger for now
+- **Self-serve API key creation via API** — keys are created in the dashboard
+- **Custodial wallets** — scopes exist; wallet APIs are not live
 
-These are planned; the API surface will expand without breaking existing v1 contracts where possible.
+The API surface will expand without breaking existing v1 contracts where possible.

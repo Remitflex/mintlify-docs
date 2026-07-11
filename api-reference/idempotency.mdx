@@ -4,7 +4,7 @@ sidebarTitle: "Idempotency"
 description: "Safely retry mutating API requests with Idempotency-Key headers."
 ---
 
-Network timeouts and client retries can cause duplicate operations. RemitFlex idempotency lets you retry mutating requests safely when authenticated with an **API key**.
+Network timeouts and client retries can cause duplicate operations. Remitflex idempotency lets you retry mutating requests safely when authenticated with an **API key**.
 
 ## When idempotency is required
 
@@ -33,27 +33,28 @@ Idempotency-Key: 7f3c2a1b-4e5d-6c7b-8a9f-0e1d2c3b4a5f
   Reusing an idempotency key for a different request body returns the original response. Always generate a new key per operation.
 </Warning>
 
-## Example: create swap
+## Example: create payment route
 
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://api.remitflex.io/v1/swaps \
+curl -X POST https://api.remitflex.io/v1/payment-routes \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
-    "from": "USDC",
-    "to": "EURC",
-    "amount": 100,
-    "destinationAddress": "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB"
+    "name": "Supplier collection",
+    "originChainKey": "tron",
+    "destinationChainKey": "base",
+    "destinationCurrency": "USDC",
+    "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
   }'
 ```
 
 ```javascript JavaScript
 import { randomUUID } from "crypto";
 
-const res = await fetch("https://api.remitflex.io/v1/swaps", {
+const res = await fetch("https://api.remitflex.io/v1/payment-routes", {
   method: "POST",
   headers: {
     Authorization: `Bearer ${process.env.REMITFLEX_API_KEY}`,
@@ -61,10 +62,11 @@ const res = await fetch("https://api.remitflex.io/v1/swaps", {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    from: "USDC",
-    to: "EURC",
-    amount: 100,
-    destinationAddress: "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB",
+    name: "Supplier collection",
+    originChainKey: "tron",
+    destinationChainKey: "base",
+    destinationCurrency: "USDC",
+    destinationAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
   }),
 });
 ```
@@ -73,16 +75,17 @@ const res = await fetch("https://api.remitflex.io/v1/swaps", {
 import os, uuid, requests
 
 requests.post(
-    "https://api.remitflex.io/v1/swaps",
+    "https://api.remitflex.io/v1/payment-routes",
     headers={
         "Authorization": f"Bearer {os.environ['REMITFLEX_API_KEY']}",
         "Idempotency-Key": str(uuid.uuid4()),
     },
     json={
-        "from": "USDC",
-        "to": "EURC",
-        "amount": 100,
-        "destinationAddress": "2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB",
+        "name": "Supplier collection",
+        "originChainKey": "tron",
+        "destinationChainKey": "base",
+        "destinationCurrency": "USDC",
+        "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
     },
 )
 ```
@@ -93,7 +96,6 @@ requests.post(
 
 All `POST` and `DELETE` endpoints in this reference, including:
 
-- `POST /swaps`, `POST /swaps/{id}/cancel`
 - `POST /customers`
 - `POST /payment-routes`, `POST /payment-routes/{id}/pause`, `POST /payment-routes/{id}/activate`, `POST /payment-routes/{id}/deposits/sync`, `DELETE /payment-routes/{id}`
 

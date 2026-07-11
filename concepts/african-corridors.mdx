@@ -1,65 +1,54 @@
 ---
 title: "African corridors and routing"
-sidebarTitle: "African corridors"
-description: "How RemitFlex approaches stablecoin routing for African and diaspora payment flows."
+sidebarTitle: "African flows"
+description: "Typical stablecoin and local fiat flows for African and diaspora payments."
 ---
 
-RemitFlex is built for teams moving value **into, across, and out of African markets** using stablecoins as the settlement layer. We do not replace local bank rails today — we make stablecoin collection and conversion programmable so your product can sit on top.
+Remitflex is built for teams moving value **into, across, and out of African markets**. Stablecoins are the fast settlement layer; local bank accounts are the last mile for recipients who need fiat.
+
+One API covers both — you do not stitch together separate providers for crypto collection and bank payouts.
+
+<Card title="Networks & corridors" icon="globe" href="/concepts/networks-and-corridors">
+  Query supported networks, tokens, and recommended pay-in paths before you integrate.
+</Card>
 
 ## Why stablecoins for Africa
 
 Traditional cross-border flows into Africa are slow, opaque, and expensive. Stablecoins offer:
 
 - **24/7 settlement** — no cut-off times or weekend delays
-- **Transparent fees** — on-chain fees + quoted FX, not hidden correspondent charges
-- **Programmable addresses** — generate a deposit route per customer or invoice
-- **Treasury control** — hold USDC/EURC, convert when rates are favourable
-
-RemitFlex gives you one API for same-chain swaps and cross-chain collection — no need to integrate multiple protocols yourself.
+- **Transparent fees** — quoted FX and on-chain costs, not hidden correspondent charges
+- **Programmable addresses** — generate a deposit route or pay link per customer or invoice
+- **Treasury control** — hold USDC and pay out locally when needed
 
 ## Typical flows
 
 <Tabs>
-  <Tab title="Diaspora remittance">
-    A user abroad holds USDC. Your app creates a **payment route** or **swap** to deliver EURC or another stablecoin to a recipient wallet on Solana or another supported chain.
+  <Tab title="Local bank payout">
+    Your treasury holds USDC. Create an **offramp** with the recipient's bank details, fund the order, and Remitflex disburses NGN (or another supported currency) to their account.
 
-    Best for: crypto-native recipients, treasury prefunding, B2B supplier payments.
+    Best for: supplier payments, payroll, remittance to non-crypto recipients.
   </Tab>
-  <Tab title="Platform collection">
-    A marketplace or payroll platform creates a **payment route** per merchant or pay run. Payers send from any supported origin chain; funds arrive at your configured destination.
+  <Tab title="Fiat to stablecoin">
+    A user wants to fund a crypto wallet from their local bank. Create an **onramp** — they deposit to the virtual account details you show them, and stablecoin arrives at `destinationAddress`.
 
-    Best for: aggregating pay-ins before internal ledgering.
+    Best for: on-ramping users, prefunding wallets, collecting local currency before treasury conversion.
   </Tab>
-  <Tab title="Treasury rebalance">
-    Your treasury holds USDC; you need EURC for European partners. Create a **swap**, deposit USDC to the address returned, receive EURC at your destination wallet.
+  <Tab title="Diaspora collection">
+    A user abroad holds USDC. Create a **payment route** or **payment link** to collect from any supported chain and deliver to your wallet — or follow with an offramp to pay a local bank account.
 
-    Best for: FX exposure management on Solana.
+    Best for: crypto-native pay-ins, marketplace aggregation, invoice collection.
   </Tab>
 </Tabs>
 
-## Discovering corridors
+## Putting it together
 
-Use the API to list what is available today — do not hardcode:
+Many products combine naturally:
 
-```bash
-curl https://api.remitflex.io/v1/payment-routes/corridors \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-```
+1. **Discover** supported networks — [Networks & corridors](/concepts/networks-and-corridors)
+2. **Collect globally** with a payment link or route
+3. **Hold** in stablecoin treasury
+4. **Pay locally** with an offramp to a bank account
+5. **Reconcile** everything in `GET /v1/transactions`
 
-```bash
-curl https://api.remitflex.io/v1/payment-routes/chains \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-```
-
-For Solana pairs:
-
-```bash
-curl https://api.remitflex.io/v1/rates/currencies \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-```
-
-## Roadmap: local fiat
-
-Local currency off-ramp (e.g. NGN, KES, GHS to bank accounts) is not live in the API yet. When it ships, it will follow the same pattern: create intent → fund → track in the transactions ledger.
-
-Until then, pair RemitFlex stablecoin rails with your own local payout partners where needed.
+See [Local fiat](/products/fiat-rails) for offramp and onramp details, and [Payment links](/products/payment-links) for hosted collection.

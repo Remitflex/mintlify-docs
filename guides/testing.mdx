@@ -1,89 +1,99 @@
 ---
-title: "Testing your integration"
+title: "Test your integration"
 sidebarTitle: "Testing"
-description: "Use test API keys, local development, and the sandbox workflow to validate your RemitFlex integration."
+description: "Validate payment routes, payment links, and local fiat orders with test API keys."
 ---
 
-Test your integration with `rmf_test_` keys before switching to live keys for production.
-
-## Environment summary
+Use **`rmf_test_`** keys against `https://api.remitflex.io/v1`. Create keys in the [dashboard](https://dashboard.remitflex.io) with the scopes you need.
 
 | | Test | Live |
 |---|------|------|
-| **Key prefix** | `rmf_test_` | `rmf_live_` |
-| **Base URL** | `https://api.remitflex.io/v1` | `https://api.remitflex.io/v1` |
-| **Created in** | Dashboard → API Keys | Dashboard → API Keys |
+| Key prefix | `rmf_test_` | `rmf_live_` |
+| Base URL | `https://api.remitflex.io/v1` | Same |
 
-<Note>
-  Environment is encoded in the API key prefix. There is no separate sandbox hostname.
-</Note>
-
-## Local development
-
-Run the API locally and point your client at it:
+Environment is encoded in the key prefix — there is no separate sandbox hostname.
 
 ```bash
-export API_BASE="http://localhost:4000/v1"
 export REMITFLEX_API_KEY="rmf_test_YOUR_KEY"
+export API_BASE="https://api.remitflex.io/v1"
 ```
 
-Create a test key in the dashboard with scopes: `fx:read`, `transfers:read`, `transfers:write`, and optionally `collections:read` / `collections:write`.
-
-## Test a rate lookup
+## Payment link (invoice)
 
 ```bash
-curl -s "$API_BASE/rates/USDC/EURC" \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
-```
-
-## Test a swap (dry run flow)
-
-```bash
-curl -s -X POST "$API_BASE/swaps" \
+curl -s -X POST "$API_BASE/collections" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
-    "from": "USDC",
-    "to": "EURC",
-    "amount": 1,
-    "destinationAddress": "YOUR_SOLANA_ADDRESS"
+    "linkMode": "invoice",
+    "pricingType": "fixed",
+    "amount": 10,
+    "destinationChainKey": "solana",
+    "destinationCurrency": "USDC",
+    "destinationAddress": "YOUR_WALLET",
+    "label": "Test invoice"
   }' | jq .
 ```
 
-Deposit USDC to the returned `depositAddress` before `expiresAt` to complete the swap on-chain.
+Open the returned `payUrl`. One link, one payment — see [Payment links](/products/payment-links).
 
-## Test a payment route
+## Checkout link
 
 ```bash
-# List supported chains
+curl -s -X POST "$API_BASE/collections" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "linkMode": "checkout",
+    "pricingType": "open",
+    "destinationChainKey": "solana",
+    "destinationCurrency": "USDC",
+    "destinationAddress": "YOUR_WALLET",
+    "label": "Donate"
+  }' | jq .
+```
+
+Share the same `payUrl` for every visitor. Each quote creates a session — list them with `GET /collections/{id}`.
+
+## Payment route
+
+```bash
 curl -s "$API_BASE/payment-routes/chains" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
 
-# Create a route (requires collections:write)
 curl -s -X POST "$API_BASE/payment-routes" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Test route",
-    "originChainId": 792703809,
-    "destinationChainId": 792703809,
-    "destinationCurrency": "0x...",
-    "destinationAddress": "0x..."
+    "originChainKey": "ethereum",
+    "destinationChainKey": "solana",
+    "destinationCurrency": "USDC",
+    "destinationAddress": "YOUR_WALLET"
   }' | jq .
 ```
 
-See [Payment routes](/products/payment-routes) for full request fields and examples.
+## Offramp quote
 
-## Idempotency in tests
+Verify your key has `fx:read` and `offramps:read`:
 
-Always send `Idempotency-Key` on mutating requests when using API keys. Retrying with the same key returns the cached response — useful for simulating network failures in integration tests.
+```bash
+curl -s "$API_BASE/fiat/currencies" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
 
-## Security
+curl -s "$API_BASE/fiat/rates/USDC/10/NGN" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
+```
+
+Use the returned rate when creating a live offramp. See [Local fiat](/products/fiat-rails) for the full payout flow.
+
+## Retries
+
+Send `Idempotency-Key` on every mutating request. Reuse the same key to safely retry after a timeout; use a new key for each distinct operation.
 
 <Warning>
-  Do not log or commit live keys (`rmf_live_`) to version control. Test keys should also be kept out of public repositories.
+  Do not commit API keys to git or expose them in client-side code. Revoke compromised keys in the dashboard.
 </Warning>
-
-Use separate keys per environment and per service. Revoke unused keys from the dashboard.

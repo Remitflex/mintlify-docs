@@ -1,76 +1,43 @@
 ---
 title: "Sandbox and live environments"
 sidebarTitle: "Environments"
-description: "How test and live API keys work, base URLs, and going to production."
+description: "Test and live API keys share one base URL — environment is determined by the key prefix."
 ---
-
-RemitFlex uses **test** and **live** API keys to separate development from production. The environment is determined by the key prefix, not a separate hostname.
 
 ## Base URL
 
-| Environment | Base URL |
-|-------------|----------|
-| Production | `https://api.remitflex.io/v1` |
-| Local development | `http://localhost:4000/v1` |
-
-<Note>
-  Both test and live keys use the same production base URL. The key prefix (`rmf_test_` vs `rmf_live_`) identifies the environment.
-</Note>
-
-## API key prefixes
-
-| Prefix | Environment | Example |
-|--------|-------------|---------|
-| `rmf_test_` | Test | `rmf_test_4xKj9mNpQr...` |
-| `rmf_live_` | Live | `rmf_live_7vBz2wLsYt...` |
-
-Create and manage keys in the [Dashboard](https://dashboard.remitflex.io) under **Settings → API Keys**.
-
-<Tip>
-  Store keys in environment variables. Your code should read `REMITFLEX_API_KEY` and `API_BASE` — only the values change between test and live deployments.
-</Tip>
-
-## Switching environments
-
-1. Use the correct key (`rmf_test_...` or `rmf_live_...`).
-2. Point your client at the correct base URL (production vs local).
-
-```bash
-# Test key against production API
-curl https://api.remitflex.io/v1/rates \
-  -H "Authorization: Bearer rmf_test_4xKj9mNpQr..."
-
-# Live key
-curl https://api.remitflex.io/v1/rates \
-  -H "Authorization: Bearer rmf_live_7vBz2wLsYt..."
+```
+https://api.remitflex.io/v1
 ```
 
-## Test vs live behavior
+## Key prefixes
 
-| Behavior | Test key | Live key |
-|----------|----------|----------|
-| Real on-chain settlement | Depends on corridor | Yes |
-| API surface | Identical | Identical |
-| Scopes | Enforced | Enforced |
-| Idempotency | Required on writes | Required on writes |
+| Prefix | Use |
+|--------|-----|
+| `rmf_test_` | Development and integration testing |
+| `rmf_live_` | Production |
 
-## Going live checklist
+Create keys in the [dashboard](https://dashboard.remitflex.io) under **Settings → API Keys**.
+
+```bash
+curl https://api.remitflex.io/v1/rates \
+  -H "Authorization: Bearer rmf_test_..."
+```
+
+## Going live
 
 <Steps>
-  <Step title="Create a live API key">
-    In the dashboard, create a new key with environment **live** and the scopes your production service needs.
+  <Step title="Create a live key">
+    Same scopes as your test key, environment set to **live**.
   </Step>
   <Step title="Update secrets">
-    Replace `rmf_test_...` with `rmf_live_...` in your production secrets manager or environment variables.
+    Replace `rmf_test_...` with `rmf_live_...` in production config.
   </Step>
-  <Step title="Verify with a small swap or route">
-    Run a low-value swap or payment-route deposit end-to-end before routing production volume.
-  </Step>
-  <Step title="Monitor transactions">
-    Use `GET /transactions` and the dashboard to confirm settlement.
+  <Step title="Verify">
+    Run a small payment link or offramp end-to-end, then check [Transactions](/products/transactions).
   </Step>
 </Steps>
 
 <Warning>
-  Never commit live keys to git or expose them in client-side code.
+  Never commit live keys to git or ship them in browser code.
 </Warning>

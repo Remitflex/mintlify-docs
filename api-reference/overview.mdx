@@ -1,17 +1,16 @@
 ---
 title: "API overview"
 sidebarTitle: "Overview"
-description: "Base URLs, response format, rate limits, authentication, and idempotency for the RemitFlex REST API."
+description: "Base URLs, response format, rate limits, authentication, and idempotency for the Remitflex REST API."
 ---
 
-The RemitFlex API is a RESTful JSON API for stablecoin swaps, cross-chain payment routes, exchange rates, customers, and a unified transaction ledger.
+The Remitflex API is a RESTful JSON API for cross-chain collection, local fiat payouts and deposits, exchange rates, customers, and a unified transaction ledger.
 
 ## Base URLs
 
 | Environment | Base URL |
 |-------------|----------|
 | Production | `https://api.remitflex.io/v1` |
-| Local | `http://localhost:4000/v1` |
 
 <Note>
   Test keys use the `rmf_test_` prefix; live keys use `rmf_live_`. Both work against the same base URL — environment is encoded in the key, not the hostname.
@@ -30,11 +29,11 @@ Production requests must use HTTPS. Plain HTTP is only appropriate for local dev
 Send JSON bodies with `Content-Type: application/json` on `POST` requests.
 
 ```bash
-curl -X POST https://api.remitflex.io/v1/swaps \
+curl -X POST https://api.remitflex.io/v1/payment-routes \
   -H "Authorization: Bearer rmf_test_xxxx" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
-  -d '{"from":"USDC","to":"EURC","amount":100,"destinationAddress":"..."}'
+  -d '{"name":"Supplier collection","originChainKey":"tron","destinationChainKey":"base","destinationCurrency":"USDC","destinationAddress":"..."}'
 ```
 
 ## Response format
@@ -46,7 +45,7 @@ All responses use a consistent envelope.
 ```json
 {
   "status": "success",
-  "message": "Swap created. Deposit to the address provided.",
+  "message": "Payment route created",
   "data": { }
 }
 ```
@@ -56,11 +55,13 @@ All responses use a consistent envelope.
 ```json
 {
   "status": "error",
-  "message": "Swap not found"
+  "message": "Payment route not found"
 }
 ```
 
-Validation errors (`422`) include an `errors` object with per-field Zod messages.
+Validation errors (`422`) include an `errors` object with per-field messages.
+
+Each endpoint in the [API reference](/api-reference) documents its response shape under **Response** — field names, types, and the `status` / `message` / `data` envelope. Discovery endpoints return network keys and symbols only (no internal chain IDs).
 
 ## Authentication
 
@@ -99,11 +100,13 @@ When exceeded, the API returns `429 Too Many Requests`.
 
 | Resource | Description |
 |----------|-------------|
-| Rates | Cached FX rates for swap pairs — `GET /rates` |
-| Swaps | Same-chain stablecoin swaps — `GET/POST /swaps` |
 | Payment routes | Cross-chain collection — `GET/POST /payment-routes` |
+| Payment links | Shareable pay URLs and hosted pay page — `GET/POST /collections`, public `GET/POST /pay/{id}` |
+| Offramps | Stablecoin → local fiat bank payout — `GET/POST /offramps` |
+| Onramps | Local fiat → stablecoin delivery — `GET/POST /onramps` |
+| Fiat reference | Currencies, banks, account verification, sell quotes — `GET/POST /fiat/...` |
 | Customers | Organisation customers — `GET/POST /customers` |
-| Transactions | Unified swap + payment-route ledger — `GET /transactions` |
+| Transactions | Unified ledger — `GET /transactions` |
 
 Browse the **API Reference** tab in the sidebar for interactive endpoint documentation and the API playground.
 

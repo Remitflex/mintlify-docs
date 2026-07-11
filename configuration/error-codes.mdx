@@ -1,7 +1,7 @@
 ---
 title: "Error codes and HTTP statuses"
 sidebarTitle: "Error codes"
-description: "RemitFlex API error response format, HTTP status codes, and retry guidance."
+description: "Remitflex API error response format, HTTP status codes, and retry guidance."
 ---
 
 All API errors return a JSON envelope with an HTTP status code.
@@ -11,7 +11,7 @@ All API errors return a JSON envelope with an HTTP status code.
 ```json
 {
   "status": "error",
-  "message": "Swap not found"
+  "message": "Payment route not found"
 }
 ```
 
@@ -39,11 +39,10 @@ Validation errors (`422`) include an `errors` object with per-field messages fro
 | `401` | Invalid or missing auth token/key | Fix credentials |
 | `403` | Forbidden (missing scope, suspended org) | Fix scopes or contact support |
 | `404` | Resource not found | Do not retry |
-| `409` | Conflict (e.g. swap cannot be cancelled) | Do not retry same operation |
+| `409` | Conflict (e.g. payment route already active) | Do not retry same operation |
 | `422` | Validation or business rule failure | Fix input, then retry |
 | `429` | Rate limit exceeded | Retry with backoff |
 | `500` | Server error | Retry with exponential backoff |
-| `503` | Service unavailable (e.g. rate not cached yet) | Retry shortly |
 
 ## Common messages
 
@@ -62,17 +61,6 @@ Validation errors (`422`) include an `errors` object with per-field messages fro
 |------|---------|------------|
 | `400` | `Idempotency-Key header is required for mutating API requests` | Add `Idempotency-Key` header on POST/DELETE |
 | `422` | `Idempotency-Key must be 255 characters or fewer` | Use a shorter unique key |
-
-### Swaps
-
-| HTTP | Message | Resolution |
-|------|---------|------------|
-| `422` | `Swap pair USDC/XYZ is not supported` | Check `GET /rates/currencies` for valid pairs |
-| `503` | `Rate for USDC/EURC is not available yet` | Wait and retry |
-| `409` | `Only pending swaps can be cancelled` | Swap is past `awaiting_deposit` |
-| `404` | `Swap not found` | Verify swap ID and org |
-
-Failed swaps return `status: failed` with a sanitized `errorMessage` on the swap object and in transaction `receipt` — not raw on-chain simulation output. Contact support with the swap ID if a deposit was received but conversion did not complete.
 
 ### Payment routes
 
@@ -94,11 +82,11 @@ When using API keys, mutating requests require `Idempotency-Key`. Retrying with 
 Use a **new** idempotency key for each distinct operation.
 
 ```bash
-curl -X POST https://api.remitflex.io/v1/swaps \
+curl -X POST https://api.remitflex.io/v1/payment-routes \
   -H "Authorization: Bearer rmf_test_xxxx" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
-  -d '{"from":"USDC","to":"EURC","amount":10,"destinationAddress":"..."}'
+  -d '{"name":"Supplier collection","originChainKey":"tron","destinationChainKey":"base","destinationCurrency":"USDC","destinationAddress":"..."}'
 ```
 
 ## Example error handler (JavaScript)

@@ -1,33 +1,34 @@
 ---
 title: "Payment routes"
 sidebarTitle: "Payment routes"
-description: "Cross-chain stablecoin collection — create routes, share deposit addresses, and sync deposits."
+description: "Persistent cross-chain deposit addresses — API endpoints and usage."
 ---
 
-Payment routes let payers send stablecoins on an **origin chain** and receive funds on a **destination chain**. Each route has a persistent deposit address and status (`active`, `paused`, `archived`).
+Cross-chain pay-in: payer sends on one **network** (Bitcoin, Ethereum, Tron, etc.), you receive stablecoins on **Base** or **Solana**. Each route gets a persistent `depositAddress`.
 
-Ideal for African fintechs collecting USDC from diaspora or global payers and settling to a treasury wallet. Every route is tied to a **customer** under your organisation.
+**Scopes:** `collections:read`, `collections:write`
 
-**Required scopes:** `collections:read`, `collections:write`
+For hosted checkout, use [Payment links](/products/payment-links) instead.
 
-## When to use payment routes
+Discover supported networks and corridors in [Networks & corridors](/concepts/networks-and-corridors) before creating a route.
 
-- Cross-chain pay-ins (Ethereum → Solana, etc.)
-- Per-customer or per-invoice collection addresses
-- Platform aggregation before internal ledgering
+## Endpoints
 
-For same-chain Solana conversion, use [Swaps](/products/swaps).
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/payment-routes` | Create route |
+| `GET` | `/payment-routes` | List routes |
+| `GET` | `/payment-routes/{id}` | Get route |
+| `GET` | `/payment-routes/deposits` | All deposits |
+| `GET` | `/payment-routes/{id}/deposits` | Route deposits |
+| `POST` | `/payment-routes/{id}/deposits/sync` | Refresh deposit state |
+| `POST` | `/payment-routes/{id}/pause` | Pause route |
+| `POST` | `/payment-routes/{id}/activate` | Activate route |
+| `DELETE` | `/payment-routes/{id}` | Archive route |
 
-## Create a route
+## Create
 
-```bash
-# Explore supported chains and corridors first
-curl https://api.remitflex.io/v1/payment-routes/chains \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-
-curl https://api.remitflex.io/v1/payment-routes/corridors \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
-```
+Use network **keys** and token **codes** from [Networks & corridors](/concepts/networks-and-corridors) — not chain IDs or contract addresses:
 
 ```bash
 curl -X POST https://api.remitflex.io/v1/payment-routes \
@@ -35,56 +36,24 @@ curl -X POST https://api.remitflex.io/v1/payment-routes \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Supplier collection",
-    "originChainId": 792703809,
-    "destinationChainId": 137,
-    "destinationCurrency": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-    "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    "customerId": "optional-customer-uuid"
+    "name": "Treasury inbound",
+    "originChainKey": "tron",
+    "destinationChainKey": "base",
+    "destinationCurrency": "USDC",
+    "destinationAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
   }'
 ```
 
-The response includes `depositAddress` — share this with the payer on the origin chain.
+| Field | Description |
+|-------|-------------|
+| `originChainKey` | Where payers send (e.g. `bitcoin`, `ethereum`, `tron`, `base`) |
+| `destinationChainKey` | Where you receive — `base` or `solana` |
+| `destinationCurrency` | Token code — `USDC` or `USDT` |
 
-## Monitor deposits
+`originChainKey` and `destinationChainKey` are required when creating routes or payment links. Remitflex resolves networks internally — customers never send or receive chain IDs.
 
-```bash
-# All deposits for your org
-curl https://api.remitflex.io/v1/payment-routes/deposits \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+Response includes `depositAddress` — share with payers on the origin network.
 
-# Deposits for one route
-curl https://api.remitflex.io/v1/payment-routes/{id}/deposits \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+## Status
 
-# Pull latest deposit state
-curl -X POST https://api.remitflex.io/v1/payment-routes/{id}/deposits/sync \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
-  -H "Idempotency-Key: $(uuidgen)"
-```
-
-## Manage lifecycle
-
-```bash
-# Pause / activate / archive
-curl -X POST https://api.remitflex.io/v1/payment-routes/{id}/pause \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
-  -H "Idempotency-Key: $(uuidgen)"
-
-curl -X DELETE https://api.remitflex.io/v1/payment-routes/{id} \
-  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
-  -H "Idempotency-Key: $(uuidgen)"
-```
-
-## Link to customers
-
-Attach a `customerId` when creating a route (or omit to use your org's primary customer). Filter the [transactions ledger](/products/transactions) by the same `customerId`.
-
-## API reference
-
-<CardGroup cols={2}>
-  <Card title="Create route" icon="plus" href="/api-reference/create-payment-route">`POST /payment-routes`</Card>
-  <Card title="List routes" icon="list" href="/api-reference/list-payment-routes">`GET /payment-routes`</Card>
-  <Card title="Deposits" icon="inbox" href="/api-reference/list-all-payment-route-deposits">`GET /payment-routes/deposits`</Card>
-  <Card title="Chains & corridors" icon="globe" href="/api-reference/list-payment-route-chains">Discovery endpoints</Card>
-</CardGroup>
+`active` → `paused` → `archived`. Deposits appear in [Transactions](/products/transactions) as `kind: payment_route`.

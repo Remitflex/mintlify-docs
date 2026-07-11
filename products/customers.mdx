@@ -1,17 +1,17 @@
 ---
 title: "Customers"
 sidebarTitle: "Customers"
-description: "Organise payers and beneficiaries under your organisation for swaps and payment routes."
+description: "Organise payers and beneficiaries under your organisation — the foundation for payment routes, payment links, and fiat rails."
 ---
 
-Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup (representing the organisation itself). Existing swaps and routes without a customer are attributed to this primary customer.
+Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup (representing the organisation itself). Existing routes without a customer are attributed to this primary customer.
 
 **Required scopes:** `transfers:read` (list), `transfers:write` (create)
 
 ## Why customers matter
 
-- Attach `customerId` to [swaps](/products/swaps) and [payment routes](/products/payment-routes) for per-counterparty tracking
-- Filter `GET /v1/swaps?customerId=...` and `GET /v1/transactions?customerId=...`
+- Attach `customerId` to [payment routes](/products/payment-routes), [payment links](/products/payment-links), and [local fiat](/products/fiat-rails) orders for per-counterparty tracking
+- Filter `GET /v1/transactions?customerId=...`
 - Reconcile by customer name in the transactions ledger
 
 ## List customers

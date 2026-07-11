@@ -1,66 +1,82 @@
 ---
-title: "RemitFlex — stablecoin infrastructure for Africa"
+title: "Remitflex — stablecoin infrastructure for Africa"
 sidebarTitle: "Introduction"
-description: "Programmable stablecoin payments, swaps, and cross-chain collection — built for African fintechs, platforms, and enterprises."
+description: "Programmable stablecoin payments, local fiat rails, and cross-chain collection — built for African fintechs, platforms, and enterprises."
 ---
 
-RemitFlex is stablecoin payment infrastructure for the African market — programmable money movement through a single REST API. Swaps, collection routes, customer records, and a unified ledger are all first-class resources.
+Remitflex is payment infrastructure for the African market. One REST API covers cross-chain collection, local bank payouts, and fiat-to-stablecoin deposits — with a single ledger for reconciliation.
 
-We help businesses accept stablecoins, convert between denominations, and route value across chains without building wallet, FX, or cross-chain plumbing themselves.
+You integrate with Remitflex. We handle wallets, FX, cross-chain routing, and local bank settlement behind the scenes.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    API key, first rate check, first swap — under ten minutes.
+    API key, first payment route, first collection — under ten minutes.
+  </Card>
+  <Card title="Customers" icon="users" href="/products/customers">
+    Organise payers and beneficiaries before you create payments.
   </Card>
   <Card title="Dashboard" icon="layout-dashboard" href="https://dashboard.remitflex.io">
     Sign up, manage API keys, and monitor activity at dashboard.remitflex.io.
   </Card>
+  <Card title="Payment links" icon="link" href="/products/payment-links">
+    Invoices (one payment) or checkout (reusable URL) — hosted pay pages with embed support.
+  </Card>
   <Card title="Payment routes" icon="route" href="/products/payment-routes">
     Cross-chain collection for pay-ins across African and global corridors.
+  </Card>
+  <Card title="Local fiat" icon="building-columns" href="/products/fiat-rails">
+    Pay local bank accounts from stablecoin, or collect fiat and deliver USDC.
   </Card>
   <Card title="API reference" icon="code" href="/api-reference/overview">
     Interactive playground for every endpoint.
   </Card>
 </CardGroup>
 
-## What RemitFlex does
+## What Remitflex does
+
+Every product follows the same integration pattern: create an intent, fund it, track status in the ledger.
 
 | Product | What it solves | API |
 |---------|----------------|-----|
-| **Swaps** | Convert USDC ↔ EURC and other Solana pairs | `POST /v1/swaps` |
-| **Payment routes** | Collect on one chain, settle on another | `POST /v1/payment-routes` |
 | **Customers** | Organise payers and beneficiaries under your org | `GET/POST /v1/customers` |
-| **Transactions** | Single ledger for swaps + route deposits | `GET /v1/transactions` |
-| **Rates** | Live cached FX for supported pairs | `GET /v1/rates` |
+| **Payment links** | Shareable pay URLs — invoice (one-off) or checkout (reusable) | `POST /v1/collections` |
+| **Payment routes** | Collect on one chain, settle on another | `POST /v1/payment-routes` |
+| **Offramps** | Send stablecoin, pay a local bank account | `POST /v1/offramps` |
+| **Onramps** | Collect local fiat, deliver stablecoin to a wallet | `POST /v1/onramps` |
+| **Transactions** | Single ledger for all products above | `GET /v1/transactions` |
+| **Rates** | Live fiat sell rate quotes | `GET /v1/fiat/rates/...` |
 
 ## Built for African payments
 
-RemitFlex is designed for teams building:
+Remitflex is designed for teams building:
 
-- **Cross-border B2B** — suppliers, freelancers, and remittance corridors into and across Africa
-- **Stablecoin treasuries** — hold USDC, pay out in local stablecoins or across chains
-- **Platform embeds** — marketplaces and payroll products that need programmable collection addresses
+- **Cross-border B2B** — pay suppliers and freelancers into local bank accounts from stablecoin treasury
+- **Diaspora remittance** — collect stablecoins globally, settle to wallets or local fiat
+- **Platform embeds** — marketplaces and payroll products that need programmable collection and payout
 
-See [African corridors](/concepts/african-corridors) for how we think about routing and [Platform overview](/concepts/platform) for the full mental model.
+See [Networks & corridors](/concepts/networks-and-corridors) for typical flows, [African flows](/concepts/african-corridors) for business use cases, and [Platform overview](/concepts/platform) for how the pieces fit together.
 
 ## How it works
 
 ```mermaid
 flowchart LR
   subgraph YourApp["Your application"]
-    API[RemitFlex API]
+    API[Remitflex API]
   end
   subgraph Products["Products"]
-    Swaps[Swaps]
     Routes[Payment routes]
+    Links[Payment links]
+    Fiat[Offramps & onramps]
   end
   subgraph Ledger["Ledger"]
     Tx[Transactions]
   end
-  API --> Swaps
   API --> Routes
-  Swaps --> Tx
+  API --> Links
+  API --> Fiat
   Routes --> Tx
+  Links --> Tx
+  Fiat --> Tx
 ```
 
 ## Get started
@@ -70,13 +86,13 @@ flowchart LR
     Register at [dashboard.remitflex.io](https://dashboard.remitflex.io) and complete email OTP verification.
   </Step>
   <Step title="Create an API key">
-    In the dashboard, create a **test** key with scopes for the products you need (`fx:read`, `transfers:write`, `collections:write`).
+    In the dashboard, create a **test** key with scopes for the products you need. Add `collections:*` for payment routes and links, or `offramps:*` / `onramps:*` for local fiat.
   </Step>
   <Step title="Integrate">
-    Follow the [Quickstart](/quickstart) or jump to [Swaps](/products/swaps) / [Payment routes](/products/payment-routes).
+    Follow the [Quickstart](/quickstart) or jump to [Payment links](/products/payment-links), [Payment routes](/products/payment-routes), or [Local fiat](/products/fiat-rails).
   </Step>
 </Steps>
 
 <Note>
-  Bank off-ramp and outbound webhooks are on the roadmap. Today, use swaps and payment routes plus the transactions ledger for status.
+  Outbound webhooks to your server are on the roadmap. Today, poll order endpoints or `GET /v1/transactions` for status.
 </Note>
