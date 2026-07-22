@@ -1,12 +1,17 @@
 ---
 title: "Rates"
 sidebarTitle: "Rates"
-description: "Fiat sell quotes for stablecoin-to-local-currency offramps."
+description: "Fiat sell quotes and Solana EURC↔USDC swap rates."
 ---
 
-Before creating an offramp, get a sell quote for the token amount and target currency. Remitflex caches prices and refreshes them in the background — reads are served from cache for low latency.
+RemitFlex exposes two rate surfaces:
 
-**Required scope:** `fx:read`
+| Endpoint family | Use |
+|-----------------|-----|
+| `GET /v1/fiat/rates/...` | Stablecoin → local currency offramp quotes (PayCrest) |
+| `GET /v1/rates/...` | Live Relay quotes for Solana EURC↔USDC before creating a [swap](/products/swaps) |
+
+Fiat rates and swap rates are separate systems.
 
 ## Fiat sell rates (stablecoin → local currency)
 
@@ -15,10 +20,20 @@ curl "https://api.remitflex.io/v1/fiat/rates/USDC/100/NGN?network=base" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
-Pass the quoted rate when calling `POST /v1/offramps`. See [Local fiat](/products/fiat-rails).
+## Solana swap rates (EURC ↔ USDC)
+
+```bash
+curl "https://api.remitflex.io/v1/rates/USDC/EURC?amount=100&tradeType=exact_input" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+Quotes are **live from Relay** and indicative only — `POST /v1/swaps` always re-quotes.
+
+List pairs with `GET /v1/rates` and supported currencies with `GET /v1/rates/currencies`.
 
 ## API reference
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Fiat rate" icon="coins" href="/api-reference/get-fiat-rate">`GET /fiat/rates/{token}/{amount}/{currency}`</Card>
+  <Card title="Swap rate" icon="arrow-right-arrow-left" href="/api-reference/get-rate-by-pair">`GET /rates/{from}/{to}`</Card>
 </CardGroup>

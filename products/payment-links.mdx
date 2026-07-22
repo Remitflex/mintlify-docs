@@ -231,6 +231,8 @@ On the hosted pay page, **Connect wallet** is available for **EVM and Solana** f
 | `completed` | Delivered to destination | Session complete; parent stays `active` |
 | `refunded` / `failed` / `expired` / `cancelled` | Terminal | Terminal (session or cancelled parent) |
 
+On `completed`, `refunded`, and `failed`, Remitflex emails a receipt to the payer (when an email was collected), the linked customer, and the creating dashboard user.
+
 Fixed pricing: quote expires in ~1 min (`quoteValidUntil`). Open pricing: re-quote on the same origin reuses the deposit address.
 
 ## Embed {#embed}

@@ -21,7 +21,11 @@
       "credentials": true
     },
     "examples": {
-      "languages": ["bash", "javascript", "python"],
+      "languages": [
+        "bash",
+        "javascript",
+        "python"
+      ],
       "defaults": "required",
       "prefill": false,
       "autogenerate": true
@@ -84,6 +88,13 @@
             "group": "Local fiat",
             "pages": [
               "products/fiat-rails"
+            ]
+          },
+          {
+            "group": "Swaps",
+            "pages": [
+              "products/swaps",
+              "products/ngn-rails"
             ]
           },
           {
@@ -200,6 +211,43 @@
                   "GET /fiat/rates/{token}/{amount}/{currency}"
                 ]
               }
+            ]
+          },
+          {
+            "group": "Swap rates (Solana)",
+            "pages": [
+              "GET /rates",
+              "GET /rates/currencies",
+              "GET /rates/{from}/{to}"
+            ]
+          },
+          {
+            "group": "Swaps",
+            "pages": [
+              "GET /swaps",
+              "POST /swaps",
+              "GET /swaps/{id}",
+              "POST /swaps/{id}/cancel"
+            ]
+          },
+          {
+            "group": "NGN rails",
+            "pages": [
+              "GET /rails/swaps",
+              "POST /rails/swaps",
+              "GET /rails/swaps/{id}",
+              "GET /rails/withdrawals",
+              "POST /rails/withdrawals",
+              "GET /rails/withdrawals/{id}",
+              "GET /rails/banks",
+              "POST /rails/offramps/resolve-account",
+              "GET /rails/offramps",
+              "POST /rails/offramps",
+              "GET /rails/offramps/{id}",
+              "GET /rails/onramps",
+              "POST /rails/onramps",
+              "GET /rails/onramps/{id}",
+              "POST /rails/onramps/{id}/consolidate"
             ]
           },
           {

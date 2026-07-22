@@ -51,6 +51,153 @@ components:
         example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
   schemas:
+    CreateSwapRequest:
+      type: object
+      required: [from, to, amount, destinationAddress, refundTo]
+      properties:
+        from:
+          type: string
+          enum: [USDC, EURC]
+          example: USDC
+          description: Source currency on Solana.
+        to:
+          type: string
+          enum: [USDC, EURC]
+          example: EURC
+          description: Destination currency on Solana.
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1000000000
+          example: 100
+          description: >
+            Human-readable amount. For `exact_input`, amount to send.
+            For `exact_output`, amount to receive.
+        tradeType:
+          type: string
+          enum: [exact_input, exact_output]
+          default: exact_input
+          description: Whether `amount` is the send side or receive side.
+        destinationAddress:
+          type: string
+          minLength: 32
+          maxLength: 64
+          example: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          description: Solana address to receive swapped tokens.
+        refundTo:
+          type: string
+          minLength: 32
+          maxLength: 64
+          example: 2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB
+          description: Solana address for Relay refunds (always required).
+        customerId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Customer under your org. Defaults to the org primary customer.
+
+    Swap:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        status:
+          type: string
+          enum:
+            - awaiting_deposit
+            - deposit_received
+            - swapping
+            - completed
+            - failed
+            - expired
+            - cancelled
+            - refunded
+        from:
+          type: string
+        to:
+          type: string
+        tradeType:
+          type: string
+          enum: [exact_input, exact_output]
+        amount:
+          type: number
+        expectedAmount:
+          type: string
+          description: Atomic units for the request amount (send or receive per tradeType).
+        sendAmount:
+          type: string
+          nullable: true
+          description: Atomic units the payer should send (from Relay quote).
+        sendAmountHuman:
+          type: number
+          nullable: true
+        receivedAmount:
+          type: string
+          nullable: true
+        outputAmount:
+          type: string
+          nullable: true
+        rate:
+          type: number
+          nullable: true
+        feeBps:
+          type: integer
+        depositAddress:
+          type: string
+          description: Relay Solana deposit address for the origin token.
+        relayRequestId:
+          type: string
+          nullable: true
+        relayStatus:
+          type: string
+          nullable: true
+        refundTo:
+          type: string
+          nullable: true
+        originChainId:
+          type: integer
+          example: 792703809
+        destinationAddress:
+          type: string
+        depositTxHash:
+          type: string
+          nullable: true
+        inTxHashes:
+          type: array
+          items: { type: string }
+        outTxHashes:
+          type: array
+          items: { type: string }
+        errorMessage:
+          type: string
+          nullable: true
+          description: Human-readable failure/refund reason when terminal.
+        expiresAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        expectedOutput:
+          type: number
+          nullable: true
+        receivedOutput:
+          type: number
+          nullable: true
+
     SuccessEnvelope:
       type: object
       properties:
@@ -114,7 +261,14 @@ components:
 
     CreateOnrampRequest:
       type: object
-      required: [customerId, amount, destinationAddress, destinationAddressType, refundAccount]
+      required:
+        [
+          customerId,
+          amount,
+          destinationAddress,
+          destinationAddressType,
+          refundAccount,
+        ]
       properties:
         customerId:
           type: string
@@ -152,7 +306,13 @@ components:
     CreatePaymentRouteRequest:
       type: object
       required:
-        [name, originChainKey, destinationChainKey, destinationCurrency, destinationAddress]
+        [
+          name,
+          originChainKey,
+          destinationChainKey,
+          destinationCurrency,
+          destinationAddress,
+        ]
       description: >
         Specify networks with `originChainKey` / `destinationChainKey`. Use token codes like `USDC`
         for `destinationCurrency`.
@@ -976,7 +1136,7 @@ components:
           type: string
         kind:
           type: string
-          enum: [payment_route, collection, offramp, onramp]
+          enum: [payment_route, swap, collection, offramp, onramp, rails_swap, rails_withdrawal, rails_offramp, rails_onramp, rails_deposit]
         customerId:
           type: string
           format: uuid
@@ -2391,7 +2551,7 @@ paths:
       summary: List supported networks
       description: >
         Returns **origins** (networks payers can send from, with accepted tokens) and
-        **settlements** (Base or Solana, with USDC/USDT). Requires `collections:read` scope.
+        **settlements** (Base or Solana, with USDC/USDT/EURC). Requires `collections:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2718,7 +2878,7 @@ paths:
     post:
       operationId: uploadCollectionLogo
       summary: Upload payment link logo
-      description: Multipart upload (`logo` field). PNG, JPEG, WebP, or SVG; max 2 MB. Requires `collections:write`.
+      description: Multipart upload (`logo` field). PNG, JPEG, or WebP; max 2 MB. SVG is not allowed. Requires `collections:write`.
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
@@ -2859,7 +3019,7 @@ paths:
     post:
       operationId: createPublishableKey
       summary: Create publishable API key
-      description: Dashboard JWT only. Browser-safe key for payment link embeds.
+      description: Dashboard JWT only. Browser-safe key for payment link embeds. Issued with `collections:read` only (no write).
       tags: [API keys]
       security: []
       responses:
@@ -3129,3 +3289,694 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/FiatRate"
+
+  /rates:
+    get:
+      operationId: listRates
+      summary: List exchange rates
+      description: >
+        Returns live Relay indicative quotes for Solana EURC↔USDC.
+        Requires `fx:read` scope. Always re-quote on `POST /swaps`.
+      tags: [Rates]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Rates fetched
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          chain: { type: string, example: solana }
+                          provider: { type: string, example: relay }
+                          updatedAt: { type: string, nullable: true }
+                          rates: { type: array, items: { type: object } }
+              examples:
+                success:
+                  $ref: "#/components/examples/ListRatesResponse"
+        "401":
+          description: Invalid or missing API key
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: "#/components/examples/ErrorResponse"
+        "403":
+          description: Missing required scope
+
+  /rates/currencies:
+    get:
+      operationId: listRateCurrencies
+      summary: List currencies and pairs
+      description: Returns Solana USDC/EURC and the supported swap pairs. Requires `fx:read` scope.
+      tags: [Rates]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Currencies fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/ListCurrenciesResponse"
+
+  /rates/{from}/{to}:
+    get:
+      operationId: getPairRate
+      summary: Get pair rate
+      description: >
+        Live Relay indicative quote for a Solana EURC↔USDC pair.
+        Optional `amount` and `tradeType` query params. Requires `fx:read` scope.
+      tags: [Rates]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: from
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [USDC, EURC]
+          example: USDC
+        - name: to
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [USDC, EURC]
+          example: EURC
+        - name: amount
+          in: query
+          required: false
+          schema:
+            type: number
+          description: Probe amount (human decimal)
+        - name: tradeType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [exact_input, exact_output]
+            default: exact_input
+      responses:
+        "200":
+          description: Rate fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/PairRateResponse"
+        "503":
+          description: Rate not available yet
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Rate for USDC/EURC not available yet. Try again shortly.
+
+  /swaps:
+    get:
+      operationId: listSwaps
+      summary: List swaps
+      description: Returns up to 50 swaps for your organisation, newest first. Optionally filter by `customerId`. Requires `transfers:read` scope.
+      tags: [Swaps]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
+      responses:
+        "200":
+          description: Swaps fetched
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          swaps:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Swap"
+                          total:
+                            type: integer
+              examples:
+                success:
+                  $ref: "#/components/examples/ListSwapsResponse"
+    post:
+      operationId: createSwap
+      summary: Create swap
+      description: |
+        Creates a Solana EURC↔USDC swap via Relay and returns a deposit address.
+        RemitFlex does not custody funds. Deposit the `from` token to `depositAddress` before expiry.
+        `refundTo` is always required. Tied to `customerId` (defaults to org primary customer).
+        Requires `transfers:write` scope and an `Idempotency-Key` header.
+      tags: [Swaps]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSwapRequest"
+      x-codeSamples:
+        - lang: bash
+          label: curl
+          source: |
+            curl -X POST https://api.remitflex.io/v1/swaps \
+              -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+              -H "Idempotency-Key: $(uuidgen)" \
+              -H "Content-Type: application/json" \
+              -d '{"from":"USDC","to":"EURC","amount":100,"tradeType":"exact_input","destinationAddress":"2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB","refundTo":"2dudFU32c5wsRpfRZDXBAJFirHC4hindqpKSCwwtDaAB"}'
+      responses:
+        "201":
+          description: Swap created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Swap"
+              examples:
+                success:
+                  $ref: "#/components/examples/CreateSwapResponse"
+        "400":
+          description: Missing Idempotency-Key
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Idempotency-Key header is required for API key requests
+        "422":
+          description: Validation error or unsupported pair
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Unsupported currency pair
+
+  /swaps/{id}:
+    get:
+      operationId: getSwap
+      summary: Get swap
+      description: Requires `transfers:read` scope. Syncs Relay status before returning.
+      tags: [Swaps]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Swap fetched
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/GetSwapResponse"
+                failed:
+                  $ref: "#/components/examples/GetSwapFailedResponse"
+        "404":
+          description: Swap not found
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Swap not found
+
+  /swaps/{id}/cancel:
+    post:
+      operationId: cancelSwap
+      summary: Cancel swap
+      description: Cancels a swap in `awaiting_deposit` status. Requires `transfers:write` scope and `Idempotency-Key`.
+      tags: [Swaps]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Swap cancelled
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: "#/components/examples/CancelSwapResponse"
+        "409":
+          description: Swap cannot be cancelled in current status
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Swap cannot be cancelled in current status
+
+  /rails/swaps:
+    get:
+      operationId: listRailsSwaps
+      summary: List NGN rails swaps
+      description: |
+        Lists StRails Smart Wallet swaps (CNGN/USDC/USDT). Separate from Solana Relay `/swaps`.
+        Requires `transfers:read` scope.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Rails swaps fetched
+    post:
+      operationId: createRailsSwap
+      summary: Create NGN rails swap
+      description: |
+        Swaps CNGN ↔ USDC/USDT on the customer's StRails Smart Wallet via `POST /swap`.
+        Customer must be linked to a StRails user. Requires `transfers:write` and `Idempotency-Key`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sellToken, buyToken, amount]
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                sellToken:
+                  type: string
+                  enum: [CNGN, USDC, USDT]
+                buyToken:
+                  type: string
+                  enum: [CNGN, USDC, USDT]
+                amount:
+                  type: number
+                slippage:
+                  type: number
+                smartWalletAddress:
+                  type: string
+                destinationAddress:
+                  type: string
+            example:
+              sellToken: CNGN
+              buyToken: USDC
+              amount: 5000
+      responses:
+        "201":
+          description: Rails swap created
+        "422":
+          description: Customer not linked to StRails
+
+  /rails/swaps/{id}:
+    get:
+      operationId: getRailsSwap
+      summary: Get NGN rails swap
+      description: Requires `transfers:read`. Syncs StRails `/swapstatus` on read by default.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sync
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false", "0", "1"]
+      responses:
+        "200":
+          description: Rails swap fetched
+        "404":
+          description: Not found
+
+  /rails/withdrawals:
+    get:
+      operationId: listRailsWithdrawals
+      summary: List NGN rails withdrawals
+      description: Requires `transfers:read` scope.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Rails withdrawals fetched
+    post:
+      operationId: createRailsWithdrawal
+      summary: Create NGN rails withdrawal
+      description: |
+        Withdraws CNGN/USDC/USDT from the user Smart Wallet to an external address (`/withdrawasset`).
+        Requires `transfers:write` and `Idempotency-Key`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [internalWallet, destinationWallet, amount]
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                internalWallet:
+                  type: string
+                destinationWallet:
+                  type: string
+                amount:
+                  type: number
+                ticker:
+                  type: string
+                  enum: [CNGN, USDC, USDT]
+                  default: CNGN
+                network:
+                  type: string
+                  description: Bridge network (default Base)
+            example:
+              internalWallet: "0xSmartWallet"
+              destinationWallet: "0xExternal"
+              amount: 100
+              ticker: CNGN
+              network: base
+      responses:
+        "201":
+          description: Rails withdrawal created
+
+  /rails/withdrawals/{id}:
+    get:
+      operationId: getRailsWithdrawal
+      summary: Get NGN rails withdrawal
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Rails withdrawal fetched
+        "404":
+          description: Not found
+
+  /rails/banks:
+    get:
+      operationId: listRailsOfframpBanks
+      summary: List supported NGN offramp banks
+      description: |
+        Nigerian banks supported for cNGN → NGN offramps and account-name
+        resolution (intersection of StRails NIBSS banks and PayCrest
+        institutions). Use `bankCode` values here for `resolve-account` and
+        `POST /rails/offramps`. Requires `transfers:read`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Offramp banks fetched
+          content:
+            application/json:
+              example:
+                banks:
+                  - name: GTBank
+                    bankCode: "058"
+                total: 1
+
+  /rails/offramps/resolve-account:
+    post:
+      operationId: resolveRailsOfframpAccount
+      summary: Resolve NGN offramp account name
+      description: |
+        Resolves the account holder name for a Nigerian bank account via
+        PayCrest `verify-account`, keyed by a `bankCode` from
+        `GET /rails/banks`. Returns `422` if the account cannot be verified or
+        the bank is unsupported. Requires `transfers:read`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountNumber, bankCode]
+              properties:
+                accountNumber:
+                  type: string
+                bankCode:
+                  type: string
+            example:
+              accountNumber: "0123456789"
+              bankCode: "058"
+      responses:
+        "200":
+          description: Account resolved
+          content:
+            application/json:
+              example:
+                accountName: JOHN DOE
+                bankName: GTBank
+                bankCode: "058"
+        "422":
+          description: Account could not be verified
+
+  /rails/offramps:
+    get:
+      operationId: listRailsOfframps
+      summary: List NGN rails user offramps
+      description: User cNGN → NGN bank offramps (not PayCrest `/offramps`). Requires `transfers:read`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Rails offramps fetched
+    post:
+      operationId: createRailsOfframp
+      summary: Create NGN rails user offramp
+      description: |
+        Offramps cNGN from the user Smart Wallet to a Nigerian bank (`/cngnofframp`).
+        `amount` is in Naira. Requires `transfers:write` and `Idempotency-Key`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, accountNumber, bankCode]
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  description: Amount in Naira
+                accountNumber:
+                  type: string
+                bankCode:
+                  type: string
+                ticker:
+                  type: string
+                  enum: [CNGN, USDC, USDT]
+                  default: CNGN
+            example:
+              amount: 5000
+              accountNumber: "0123456789"
+              bankCode: "058"
+              ticker: CNGN
+      responses:
+        "201":
+          description: Rails offramp created
+
+  /rails/offramps/{id}:
+    get:
+      operationId: getRailsOfframp
+      summary: Get NGN rails user offramp
+      description: Requires `transfers:read`. Syncs StRails offramp status on read by default.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sync
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false", "0", "1"]
+      responses:
+        "200":
+          description: Rails offramp fetched
+        "404":
+          description: Not found
+
+  /rails/onramps:
+    get:
+      operationId: listRailsOnramps
+      summary: List NGN rails temporary VA onramps
+      description: Requires `transfers:read`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Rails onramps fetched
+    post:
+      operationId: createRailsOnramp
+      summary: Create temporary VA onramp
+      description: |
+        Creates a StRails temporary virtual account for a fixed NGN amount (~30 min TTL).
+        Third-party deposits are accepted. Default `sweepToOfframp=true` moves minted
+        tokens to the customer's permanent Smart Wallet. Requires `transfers:write`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  exclusiveMinimum: 0
+                sweepToOfframp:
+                  type: boolean
+                  default: true
+                autoSwap:
+                  type: boolean
+                  default: false
+                assetSwap:
+                  type: string
+                  enum: [USDC, USDT]
+                owner:
+                  type: string
+                destinationAddress:
+                  type: string
+            example:
+              amount: 5000
+              sweepToOfframp: true
+              autoSwap: false
+      responses:
+        "201":
+          description: Rails onramp created
+
+  /rails/onramps/{id}:
+    get:
+      operationId: getRailsOnramp
+      summary: Get NGN rails temporary VA onramp
+      description: Requires `transfers:read`. Syncs StRails onramp status on read by default. Response includes live `sweep` (temp vs main wallet balances / consolidate eligibility).
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sync
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false", "0", "1"]
+      responses:
+        "200":
+          description: Rails onramp fetched
+        "404":
+          description: Not found
+
+  /rails/onramps/{id}/consolidate:
+    post:
+      operationId: consolidateRailsOnramp
+      summary: Force-move temp VA funds to main Smart Wallet
+      description: |
+        When StRails auto-sweep stalls after a temporary VA onramp, withdraws
+        remaining cNGN from the generated temporary wallet into the customer's
+        linked permanent Smart Wallet. Requires `transfers:write`.
+
+        Success is not inferred from a mined StRails hash alone: RemitFlex
+        re-reads the temporary wallet balance and prefers on-chain Transfer
+        verification. Response `message` and `onramp.sweep.consolidate.status`
+        may be `completed`, `incomplete` (retryable), `submitted`, or `failed`.
+      tags: [NGN rails]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Consolidate withdrawal submitted
+        "422":
+          description: Nothing to move or wallets not ready
+        "404":
+          description: Not found

@@ -1,0 +1,107 @@
+---
+title: "Swaps"
+sidebarTitle: "Swaps"
+description: "Convert EURC ↔ USDC on Solana via Relay deposit addresses — no RemitFlex custody."
+---
+
+Swaps convert **EURC ↔ USDC on Solana** through [Relay](https://relay.link) deposit addresses. RemitFlex never holds deposit keys: you send the origin token to a Relay deposit address, and Relay delivers the output token to your Solana wallet.
+
+Every swap is tied to a **customer** under your organisation. Omit `customerId` to use your org's primary customer (created at signup).
+
+**Required scopes:** `fx:read`, `transfers:read`, `transfers:write`
+
+**Supported pair:** Solana `USDC` ↔ `EURC` only (both directions).
+
+## When to use swaps
+
+- Same-chain EURC/USDC conversion on Solana
+- Treasury FX without operating a custodial hot wallet
+- Payout preparation before a local off-ramp partner (manual today)
+
+For same-chain Solana EURC/USDC, use [Solana swaps](/products/swaps). For StRails Smart Wallet cNGN↔USDC/USDT and bank offramps, use [NGN rails](/products/ngn-rails).
+
+## Lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| `awaiting_deposit` | Waiting for deposit to `depositAddress` |
+| `deposit_received` | Relay detected an origin deposit |
+| `swapping` | Relay is executing the conversion |
+| `completed` | Output sent to `destinationAddress` |
+| `refunded` | Relay refunded the origin deposit |
+| `failed` / `expired` / `cancelled` | Terminal states |
+
+## Rates (indicative)
+
+`GET /v1/rates` and `GET /v1/rates/{from}/{to}` return **live Relay quotes**. Optional query params:
+
+| Param | Description |
+|-------|-------------|
+| `amount` | Probe amount (human decimal). Default `1` |
+| `tradeType` | `exact_input` (default) or `exact_output` |
+
+Rates are indicative only. `POST /v1/swaps` always creates a **fresh** Relay quote.
+
+## Create a swap
+
+```bash
+curl -X POST https://api.remitflex.io/v1/swaps \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "USDC",
+    "to": "EURC",
+    "amount": 100,
+    "tradeType": "exact_input",
+    "destinationAddress": "YOUR_SOLANA_WALLET",
+    "refundTo": "YOUR_SOLANA_REFUND_WALLET",
+    "customerId": "optional-customer-uuid"
+  }'
+```
+
+| Field | Description |
+|-------|-------------|
+| `from` / `to` | `USDC` or `EURC` (must differ) |
+| `amount` | Human-readable amount: send amount for `exact_input`, receive amount for `exact_output` |
+| `tradeType` | `exact_input` (default) or `exact_output` |
+| `destinationAddress` | Solana address receiving output tokens (**required**) |
+| `refundTo` | Solana address for Relay refunds (**required**) |
+| `customerId` | Optional. Defaults to your org's primary customer |
+
+Send the `from` token to `depositAddress` before `expiresAt`. Track with `GET /v1/swaps/{id}` (syncs Relay status on read).
+
+## List swaps by customer
+
+```bash
+curl "https://api.remitflex.io/v1/swaps?customerId=CUSTOMER_UUID" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+## Track and cancel
+
+```bash
+# Status
+curl https://api.remitflex.io/v1/swaps/{id} \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+
+# Cancel (only while awaiting_deposit and Relay still waiting)
+curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+## Failed / refunded swaps
+
+When a swap reaches `failed` or `refunded`, check `errorMessage` and `relayStatus`. Surface these to your user and include the swap `id` when contacting RemitFlex support.
+
+The same fields appear on swap rows in [`GET /transactions`](/api-reference/list-transactions) under `receipt`.
+
+## API reference
+
+<CardGroup cols={2}>
+  <Card title="Create swap" icon="plus" href="/api-reference/create-swap">`POST /swaps`</Card>
+  <Card title="List swaps" icon="list" href="/api-reference/list-swaps">`GET /swaps`</Card>
+  <Card title="Get swap" icon="eye" href="/api-reference/get-swap">`GET /swaps/{id}`</Card>
+  <Card title="Rates" icon="chart-line" href="/products/rates">Check FX before creating</Card>
+</CardGroup>

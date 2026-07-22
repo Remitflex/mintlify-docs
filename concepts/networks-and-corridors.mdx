@@ -17,11 +17,11 @@ curl https://api.remitflex.io/v1/payment-routes/chains \
 
 Returns three things:
 
-| Field | What it answers |
-|-------|-----------------|
-| `origins` | Networks payers can send from, with accepted `tokens` |
-| `settlements` | Where you receive (Base or Solana, USDC/USDT) |
-| `routing` | For each origin token, which settlement networks and tokens work |
+| Field         | What it answers                                                  |
+| ------------- | ---------------------------------------------------------------- |
+| `origins`     | Networks payers can send from, with accepted `tokens`            |
+| `settlements` | Where you receive (Base or Solana, USDC/USDT)                    |
+| `routing`     | For each origin token, which settlement networks and tokens work |
 
 Payment links use the same shape at `/collections/chains`.
 
@@ -30,13 +30,38 @@ Payment links use the same shape at `/collections/chains`.
 ```json
 {
   "origins": [
-    { "key": "bitcoin", "network": "Bitcoin", "addressFormat": "bitcoin", "tokens": ["BTC"] },
-    { "key": "tron", "network": "Tron", "addressFormat": "tron", "tokens": ["USDT"] },
-    { "key": "bnb", "network": "BSC", "addressFormat": "evm", "tokens": ["BNB", "USDT", "USDC"] }
+    {
+      "key": "bitcoin",
+      "network": "Bitcoin",
+      "addressFormat": "bitcoin",
+      "tokens": ["BTC"]
+    },
+    {
+      "key": "tron",
+      "network": "Tron",
+      "addressFormat": "tron",
+      "tokens": ["USDT"]
+    },
+    {
+      "key": "bnb",
+      "network": "BSC",
+      "addressFormat": "evm",
+      "tokens": ["BNB", "USDT", "USDC"]
+    }
   ],
   "settlements": [
-    { "key": "base", "network": "Base", "addressFormat": "evm", "tokens": ["USDC", "USDT"] },
-    { "key": "solana", "network": "Solana", "addressFormat": "solana", "tokens": ["USDC", "USDT"] }
+    {
+      "key": "base",
+      "network": "Base",
+      "addressFormat": "evm",
+      "tokens": ["USDC", "USDT"]
+    },
+    {
+      "key": "solana",
+      "network": "Solana",
+      "addressFormat": "solana",
+      "tokens": ["USDC", "USDT"]
+    }
   ],
   "routing": [
     {

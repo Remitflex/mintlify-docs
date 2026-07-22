@@ -105,6 +105,8 @@ Each key is issued with one or more scopes. Scopes are enforced on API-key reque
 
 Grant the minimum scopes required. A read-only reporting tool only needs `transfers:read` and `fx:read`.
 
+**Publishable keys** (`rmf_pk_*`) are embed-safe and receive only `collections:read` (pay-page reads). They cannot create or mutate collections — use a secret key or dashboard JWT for writes.
+
 ## Idempotency
 
 Mutating requests authenticated with an **API key** (`POST`, `PUT`, `PATCH`, `DELETE`) require an `Idempotency-Key` header. See [Idempotency](/api-reference/idempotency) for details.
@@ -117,7 +119,7 @@ These routes require a dashboard access token, not an API key:
 
 - `/v1/auth/*` — register, login, OTP, refresh, logout
 - `/v1/api-keys/*` — create, list, revoke keys
-- `/v1/admin/ops/*` — internal operations dashboard
+- `/v1/admin/ops/*` — internal operations dashboard (caller email must be in `PLATFORM_ADMIN_EMAILS`)
 
 ## Error responses
 
