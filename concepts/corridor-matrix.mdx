@@ -1,0 +1,48 @@
+---
+title: "Corridor matrix"
+sidebarTitle: "Corridor matrix"
+description: "Curated payment-route and payment-link corridors — origin token to Base or Solana settlement."
+---
+
+Snapshot of curated corridors for [payment routes](/products/payment-routes) and [payment links](/products/payment-links).
+
+<Warning>
+  Always call `GET /v1/payment-routes/chains` (or `/v1/collections/chains`) at runtime. This table can lag the live API.
+</Warning>
+
+## Settlements
+
+| Network | Tokens you can receive |
+|---------|------------------------|
+| **Base** | USDC, USDT |
+| **Solana** | USDC, USDT, **EURC** |
+
+## Origin → settlement
+
+| Origin | Token | → Base | → Solana |
+|--------|-------|--------|----------|
+| Bitcoin | BTC | USDC, USDT | USDC, USDT |
+| Tron | USDT | USDC, USDT | USDC, USDT |
+| BSC | USDT | USDC | USDC |
+| Polygon | USDC | USDC | USDC |
+| Ethereum | USDC | USDC | USDC |
+| Base | USDC | — | USDC |
+| Solana | USDC | USDC | EURC |
+| Solana | EURC | — | USDC |
+
+Use `originChainKey` / `destinationChainKey` from discovery (`bitcoin`, `tron`, `bnb`, `polygon`, `ethereum`, `base`, `solana`) and token codes as `destinationCurrency`.
+
+## Same-chain EURC ↔ USDC
+
+Solana USDC ↔ EURC appears in this matrix as a **collection corridor** (settle into EURC or USDC).
+
+For treasury conversion with indicative rates and a deposit lifecycle, prefer [`POST /v1/swaps`](/products/swaps) instead of a payment route.
+
+## Tokens on a chain but not in routing
+
+Some networks list extra intake tokens (e.g. BNB, ETH, SOL, USDC.e, Polygon USDT). Those are **not** curated corridors unless they appear in `routing` from `/chains`. Do not hardcode them.
+
+## Next
+
+- [Networks & corridors](/concepts/networks-and-corridors) — how discovery works
+- [Payment routes](/products/payment-routes) / [Payment links](/products/payment-links)

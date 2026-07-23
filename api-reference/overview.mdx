@@ -4,7 +4,7 @@ sidebarTitle: "Overview"
 description: "Base URLs, response format, rate limits, authentication, and idempotency for the Remitflex REST API."
 ---
 
-The Remitflex API is a RESTful JSON API for cross-chain collection, local fiat payouts and deposits, exchange rates, customers, and a unified transaction ledger.
+The Remitflex API is a RESTful JSON API for cross-chain collection, Solana swaps, local fiat, cNGN, rates, customers, and a unified transaction ledger.
 
 ## Base URLs
 
@@ -102,9 +102,12 @@ When exceeded, the API returns `429 Too Many Requests`.
 |----------|-------------|
 | Payment routes | Cross-chain collection — `GET/POST /payment-routes` |
 | Payment links | Shareable pay URLs and hosted pay page — `GET/POST /collections`, public `GET/POST /pay/{id}` |
+| Swaps | Solana EURC↔USDC — `GET/POST /swaps` |
+| Swap rates | Indicative Solana quotes — `GET /rates` |
 | Offramps | Stablecoin → local fiat bank payout — `GET/POST /offramps` |
 | Onramps | Local fiat → stablecoin delivery — `GET/POST /onramps` |
 | Fiat reference | Currencies, banks, account verification, sell quotes — `GET/POST /fiat/...` |
+| cNGN | Customer VA, convert, withdraw, payout — `/cngn/*` |
 | Customers | Organisation customers — `GET/POST /customers` |
 | Transactions | Unified ledger — `GET /transactions` |
 
@@ -114,4 +117,4 @@ Browse the **API Reference** tab in the sidebar for interactive endpoint documen
 
 - `/v1/auth/*` — dashboard login and signup
 - `/v1/api-keys/*` — key management
-- `/v1/admin/ops/*` — internal operations (JWT + `PLATFORM_ADMIN_EMAILS` allowlist)
+- `/v1/admin/ops/*` — RemitFlex internal ops only (not a merchant API)

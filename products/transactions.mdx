@@ -1,30 +1,28 @@
 ---
 title: "Transactions ledger"
 sidebarTitle: "Transactions"
-description: "Unified ledger of payment routes, payment links, Relay swaps, PayCrest fiat rails, and NGN (StRails) rails."
+description: "Unified local ledger of payment routes, payment links, swaps, local fiat, and cNGN."
 ---
 
 **Scope:** `transfers:read`  
 **Endpoint:** `GET /v1/transactions` (`?customerId=` optional)
 
-One endpoint for reconciliation across every Remitflex product. Returns up to 200 recent events, newest first. Triggers a deposit sync before responding.
+One endpoint for reconciliation across Remitflex products. Returns up to 200 recent events, newest first (local records only).
 
 | `kind` | Product |
 |--------|---------|
 | `payment_route` | Cross-chain route deposit |
-| `swap` | Solana Relay EURC↔USDC swap |
+| `swap` | Solana EURC↔USDC swap |
 | `collection` | Payment link |
-| `offramp` | PayCrest stablecoin → local fiat payout |
-| `onramp` | PayCrest local fiat → stablecoin delivery |
-| `rails_swap` | StRails Smart Wallet CNGN↔USDC/USDT swap |
-| `rails_withdrawal` | StRails Smart Wallet crypto withdrawal |
-| `rails_offramp` | StRails cNGN → NGN bank offramp |
-| `rails_onramp` | StRails temporary VA onramp (fixed amount, third-party OK) |
-| `rails_deposit` | StRails permanent VA deposit / onramp (NGN → cNGN) |
+| `offramp` | Local fiat payout (`/v1/offramps`) |
+| `onramp` | Local fiat deposit (`/v1/onramps`) |
+| `cngn_convert` | cNGN wallet convert |
+| `cngn_withdrawal` | cNGN wallet withdrawal |
+| `cngn_payout` | cNGN → NGN bank payout |
+| `cngn_payin` | Temporary VA payin |
+| `cngn_deposit` | Permanent VA deposit |
 
-Each row includes `status`, `amount`, `destination`, and `receipt` (signatures, settled amounts, safe error messages).
-
-When a transaction reaches a terminal status (completed, refunded, failed, cancelled, or expired), Remitflex emails a branded receipt to the linked customer and creating user (payment links also include the payer email when present).
+Each row includes `status`, `amount`, `destination`, and `receipt`. Terminal statuses trigger a branded email to the linked customer and creating user.
 
 ## Filtering
 
@@ -33,14 +31,9 @@ curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
-Use `customerId` to build per-user history across routes, collections, fiat orders, and NGN rails.
-
-## Refreshing deposit status
-
-For on-chain products, you can force a sync before reading the ledger:
+## Refreshing status
 
 - Payment routes: `POST /v1/payment-routes/{id}/deposits/sync`
 - Payment links: `POST /v1/collections/{id}/sync`
-
-For offramps and onramps, poll the order endpoint directly (`GET /v1/offramps/:orderId`, `GET /v1/onramps/:orderId?poll=true`).
-For NGN rails, poll `GET /v1/rails/swaps/:id`, `GET /v1/rails/withdrawals/:id`, or `GET /v1/rails/offramps/:id`.
+- Local fiat: `GET /v1/offramps/:orderId`, `GET /v1/onramps/:orderId?poll=true`
+- cNGN: `GET /v1/cngn/converts/:id`, `/withdrawals/:id`, `/payouts/:id`, `/payins/:id`, `/deposits/:id`

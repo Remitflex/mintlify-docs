@@ -29,8 +29,11 @@ Engineering detail (providers, workers, webhooks, env vars) belongs in `remitfle
 
 - **Payment link** — shareable pay URL with hosted pay page (`pricingType`: `fixed` or `open`). Dashboard: **Payment Links**. API path: `/v1/collections`; ledger `kind: "collection"`.
 - **Payment route** — persistent cross-chain deposit address (reusable corridor).
+- **Swap** — Solana EURC ↔ USDC via deposit address. API: `/v1/swaps`; rates: `/v1/rates`.
 - **Offramp** — stablecoin in, local fiat bank payout out. API: `/v1/offramps`; ledger `kind: "offramp"`.
 - **Onramp** — local fiat deposit in, stablecoin delivery out. API: `/v1/onramps`; ledger `kind: "onramp"`.
+- **cNGN** — customer Smart Wallet rails (NGN VA, convert, withdraw, bank payout). API: `/v1/cngn/*`. Enable via `POST /v1/customers/:id/strails/onboard` (BVN) or dashboard **Customers → cNGN**. Distinct from local fiat offramps/onramps.
+- **Corridor matrix** — curated origin→settlement snapshot in docs; **live source of truth** is `GET /v1/payment-routes/chains` (and `/collections/chains`).
 - **Pay page** — public payer UI at `payUrl`; quote via `POST /v1/pay/{id}/quote`.
 - **Fixed link** — exact receive amount; quote expires after `quoteValidUntil` (~1 min).
 - **Open link** — payer sends any amount; reusable deposit address per origin on a session.
@@ -40,7 +43,8 @@ Engineering detail (providers, workers, webhooks, env vars) belongs in `remitfle
 {/* Add any project-specific style rules below */}
 
 - Use **payment link** in product docs; mention `/collections` only when documenting API paths or scopes
-- Discovery endpoints (`/chains`, `/corridors`) return **network names** (Bitcoin, Ethereum, Solana, Base, Tron) — not chain IDs, vm types, or contract addresses
+- Prefer `/chains` over `/corridors` in examples; discovery returns **network names** (Bitcoin, Ethereum, Solana, Base, Tron, …) — not chain IDs, vm types, or contract addresses
+- Settlements: Base USDC/USDT; Solana USDC/USDT/EURC
 - Use active voice and second person ("you")
 - Keep sentences concise — one idea per sentence
 - Use sentence case for headings

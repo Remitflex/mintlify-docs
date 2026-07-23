@@ -4,7 +4,7 @@ sidebarTitle: "Webhooks"
 description: "Receive signed HTTPS POSTs on every money-flow status change."
 ---
 
-RemitFlex can POST signed JSON events to your HTTPS endpoints whenever a swap, payment route, collection, PayCrest order, or NGN rails object is created or changes status.
+RemitFlex can POST signed JSON events to your HTTPS endpoints whenever a swap, payment route, collection, local fiat order, or cNGN object is created or changes status.
 
 Manage endpoints in the [dashboard](https://dashboard.remitflex.io) under **Developer → Webhooks**, or via the API with JWT or an API key that includes `webhooks:read` / `webhooks:write`.
 
@@ -65,8 +65,8 @@ Compare `v1` from the header to `expected` (constant-time). Reject if the timest
 | Solana swaps | `swap.created`, `swap.updated` |
 | Payment routes | `payment_route.created`, `payment_route.updated`, `payment_route.deposit.updated` |
 | Collections | `collection.created`, `collection.updated` |
-| PayCrest | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |
-| NGN rails | `rails.swap.*`, `rails.withdrawal.*`, `rails.offramp.*`, `rails.onramp.*` (`.created` / `.updated`) |
+| Local fiat | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |
+| cNGN | `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`, `cngn.payin.*`, `cngn.deposit.*` (`.created` / `.updated`) |
 | Test | `webhook.test` (from `POST /v1/webhooks/:id/test`) |
 
 Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states.
@@ -91,4 +91,4 @@ Dashboard JWT sessions can call these routes without scopes. API keys need the m
 
 - URL must be **HTTPS**. Private, loopback, and link-local targets are rejected (SSRF protection).
 - Signing secrets are stored server-side so RemitFlex can sign outbound deliveries; the raw value is only shown on create/rotate.
-- Inbound provider webhooks (`/v1/webhooks/paycrest`, `/v1/webhooks/strails`) are separate from merchant outbound endpoints.
+- Inbound provider callbacks (separate routes) are not merchant outbound endpoints.

@@ -58,55 +58,40 @@
             ]
           },
           {
-            "group": "Customers",
-            "pages": [
-              "products/customers"
-            ]
-          },
-          {
-            "group": "Platform",
+            "group": "Concepts",
             "pages": [
               "concepts/platform",
+              "concepts/networks-and-corridors",
+              "concepts/corridor-matrix",
               "concepts/stablecoins"
             ]
           },
           {
-            "group": "Networks & corridors",
-            "pages": [
-              "concepts/networks-and-corridors",
-              "concepts/african-corridors"
-            ]
-          },
-          {
-            "group": "Collect payments",
+            "group": "Collect",
             "pages": [
               "products/payment-links",
               "products/payment-routes"
             ]
           },
           {
-            "group": "Local fiat",
-            "pages": [
-              "products/fiat-rails"
-            ]
-          },
-          {
-            "group": "Swaps",
+            "group": "Convert & FX",
             "pages": [
               "products/swaps",
-              "products/ngn-rails"
-            ]
-          },
-          {
-            "group": "Ledger",
-            "pages": [
-              "products/transactions"
-            ]
-          },
-          {
-            "group": "Rates",
-            "pages": [
               "products/rates"
+            ]
+          },
+          {
+            "group": "Local money",
+            "pages": [
+              "products/fiat-rails",
+              "products/cngn"
+            ]
+          },
+          {
+            "group": "Customers & ledger",
+            "pages": [
+              "products/customers",
+              "products/transactions"
             ]
           },
           {
@@ -137,11 +122,15 @@
             "group": "Customers",
             "pages": [
               "GET /customers",
-              "POST /customers"
+              "POST /customers",
+              "POST /customers/{id}/strails/onboard",
+              "POST /customers/{id}/strails/onboard-status",
+              "POST /customers/{id}/strails/link",
+              "POST /customers/{id}/strails/sync"
             ]
           },
           {
-            "group": "Networks & corridors",
+            "group": "Discovery",
             "pages": [
               "GET /payment-routes/chains",
               "GET /payment-routes/corridors",
@@ -232,23 +221,25 @@
             ]
           },
           {
-            "group": "NGN rails",
+            "group": "cNGN",
             "pages": [
-              "GET /rails/swaps",
-              "POST /rails/swaps",
-              "GET /rails/swaps/{id}",
-              "GET /rails/withdrawals",
-              "POST /rails/withdrawals",
-              "GET /rails/withdrawals/{id}",
-              "GET /rails/banks",
-              "POST /rails/offramps/resolve-account",
-              "GET /rails/offramps",
-              "POST /rails/offramps",
-              "GET /rails/offramps/{id}",
-              "GET /rails/onramps",
-              "POST /rails/onramps",
-              "GET /rails/onramps/{id}",
-              "POST /rails/onramps/{id}/consolidate"
+              "GET /cngn/converts",
+              "POST /cngn/converts",
+              "GET /cngn/converts/{id}",
+              "GET /cngn/withdrawals",
+              "POST /cngn/withdrawals",
+              "GET /cngn/withdrawals/{id}",
+              "GET /cngn/banks",
+              "POST /cngn/payouts/resolve-account",
+              "GET /cngn/payouts",
+              "POST /cngn/payouts",
+              "GET /cngn/payouts/{id}",
+              "GET /cngn/payins",
+              "POST /cngn/payins",
+              "GET /cngn/payins/{id}",
+              "POST /cngn/payins/{id}/consolidate",
+              "GET /cngn/deposits",
+              "GET /cngn/deposits/{id}"
             ]
           },
           {
@@ -294,6 +285,11 @@
     {
       "source": "/guides/testing-payment-links",
       "destination": "/guides/testing",
+      "permanent": true
+    },
+    {
+      "source": "/concepts/african-corridors",
+      "destination": "/introduction#typical-african-flows",
       "permanent": true
     }
   ],

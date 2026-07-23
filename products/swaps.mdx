@@ -1,10 +1,10 @@
 ---
 title: "Swaps"
 sidebarTitle: "Swaps"
-description: "Convert EURC ↔ USDC on Solana via Relay deposit addresses — no RemitFlex custody."
+description: "Convert EURC ↔ USDC on Solana via deposit addresses — no Remitflex custody."
 ---
 
-Swaps convert **EURC ↔ USDC on Solana** through [Relay](https://relay.link) deposit addresses. RemitFlex never holds deposit keys: you send the origin token to a Relay deposit address, and Relay delivers the output token to your Solana wallet.
+Swaps convert **EURC ↔ USDC on Solana**. Remitflex never holds deposit keys: you send the origin token to a deposit address, and the output token is delivered to your Solana wallet.
 
 Every swap is tied to a **customer** under your organisation. Omit `customerId` to use your org's primary customer (created at signup).
 
@@ -16,31 +16,35 @@ Every swap is tied to a **customer** under your organisation. Omit `customerId` 
 
 - Same-chain EURC/USDC conversion on Solana
 - Treasury FX without operating a custodial hot wallet
-- Payout preparation before a local off-ramp partner (manual today)
+- Indicative quotes via [`GET /v1/rates`](/products/rates) before create
 
-For same-chain Solana EURC/USDC, use [Solana swaps](/products/swaps). For StRails Smart Wallet cNGN↔USDC/USDT and bank offramps, use [NGN rails](/products/ngn-rails).
+<Tip>
+  Need to **collect** into Solana EURC or USDC from another chain? Use a [payment route](/products/payment-routes) or [payment link](/products/payment-links). Use **swaps** when you already hold one side and want a treasury conversion with rates + deposit lifecycle.
+</Tip>
+
+For NGN/cNGN wallet flows, use [cNGN](/products/cngn).
 
 ## Lifecycle
 
 | Status | Meaning |
 |--------|---------|
 | `awaiting_deposit` | Waiting for deposit to `depositAddress` |
-| `deposit_received` | Relay detected an origin deposit |
-| `swapping` | Relay is executing the conversion |
+| `deposit_received` | Origin deposit detected |
+| `swapping` | Conversion in progress |
 | `completed` | Output sent to `destinationAddress` |
-| `refunded` | Relay refunded the origin deposit |
+| `refunded` | Origin deposit refunded |
 | `failed` / `expired` / `cancelled` | Terminal states |
 
 ## Rates (indicative)
 
-`GET /v1/rates` and `GET /v1/rates/{from}/{to}` return **live Relay quotes**. Optional query params:
+`GET /v1/rates` and `GET /v1/rates/{from}/{to}` return **live quotes**. Optional query params:
 
 | Param | Description |
 |-------|-------------|
 | `amount` | Probe amount (human decimal). Default `1` |
 | `tradeType` | `exact_input` (default) or `exact_output` |
 
-Rates are indicative only. `POST /v1/swaps` always creates a **fresh** Relay quote.
+Rates are indicative only. `POST /v1/swaps` always creates a **fresh** quote.
 
 ## Create a swap
 
@@ -66,10 +70,10 @@ curl -X POST https://api.remitflex.io/v1/swaps \
 | `amount` | Human-readable amount: send amount for `exact_input`, receive amount for `exact_output` |
 | `tradeType` | `exact_input` (default) or `exact_output` |
 | `destinationAddress` | Solana address receiving output tokens (**required**) |
-| `refundTo` | Solana address for Relay refunds (**required**) |
+| `refundTo` | Solana address for refunds (**required**) |
 | `customerId` | Optional. Defaults to your org's primary customer |
 
-Send the `from` token to `depositAddress` before `expiresAt`. Track with `GET /v1/swaps/{id}` (syncs Relay status on read).
+Send the `from` token to `depositAddress` before `expiresAt`. Track with `GET /v1/swaps/{id}` (syncs status on read).
 
 ## List swaps by customer
 
@@ -85,7 +89,7 @@ curl "https://api.remitflex.io/v1/swaps?customerId=CUSTOMER_UUID" \
 curl https://api.remitflex.io/v1/swaps/{id} \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 
-# Cancel (only while awaiting_deposit and Relay still waiting)
+# Cancel (only while awaiting_deposit)
 curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)"
@@ -93,7 +97,7 @@ curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
 
 ## Failed / refunded swaps
 
-When a swap reaches `failed` or `refunded`, check `errorMessage` and `relayStatus`. Surface these to your user and include the swap `id` when contacting RemitFlex support.
+When a swap reaches `failed` or `refunded`, check `errorMessage` and status fields. Surface these to your user and include the swap `id` when contacting Remitflex support.
 
 The same fields appear on swap rows in [`GET /transactions`](/api-reference/list-transactions) under `receipt`.
 

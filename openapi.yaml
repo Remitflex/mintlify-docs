@@ -336,7 +336,7 @@ components:
           type: string
           minLength: 2
           maxLength: 128
-          description: Token code — `USDC` or `USDT`.
+          description: Token code — `USDC` or `USDT` on Base; `USDC`, `USDT`, or `EURC` on Solana.
         destinationAddress:
           type: string
           minLength: 8
@@ -565,7 +565,7 @@ components:
           description: Settlement network — `base` or `solana`.
         destinationCurrency:
           type: string
-          description: Token code — `USDC` or `USDT`.
+          description: Token code — `USDC` or `USDT` on Base; `USDC`, `USDT`, or `EURC` on Solana.
         destinationAddress:
           type: string
         customerId:
@@ -1136,7 +1136,7 @@ components:
           type: string
         kind:
           type: string
-          enum: [payment_route, swap, collection, offramp, onramp, rails_swap, rails_withdrawal, rails_offramp, rails_onramp, rails_deposit]
+          enum: [payment_route, swap, collection, offramp, onramp, cngn_convert, cngn_withdrawal, cngn_payout, cngn_payin, cngn_deposit]
         customerId:
           type: string
           format: uuid
@@ -2029,7 +2029,7 @@ components:
             - key: solana
               network: Solana
               addressFormat: solana
-              tokens: [USDC, USDT]
+              tokens: [USDC, USDT, EURC]
           routing:
             - key: tron
               network: Tron
@@ -2051,6 +2051,26 @@ components:
                 - key: solana
                   network: Solana
                   tokens: [USDC, USDT]
+            - key: polygon
+              network: Polygon
+              token: USDC
+              settlements:
+                - key: base
+                  network: Base
+                  tokens: [USDC]
+                - key: solana
+                  network: Solana
+                  tokens: [USDC]
+            - key: solana
+              network: Solana
+              token: USDC
+              settlements:
+                - key: base
+                  network: Base
+                  tokens: [USDC]
+                - key: solana
+                  network: Solana
+                  tokens: [EURC]
 
     ListCorridorsResponse:
       value:
@@ -2529,6 +2549,183 @@ paths:
               $ref: "#/components/schemas/CreateCustomerRequest"
       responses:
         "201":
+          $ref: "#/components/responses/Customer"
+
+  /customers/{id}/strails/onboard:
+    post:
+      operationId: onboardCustomerCngn
+      summary: Enable cNGN (BVN onboard)
+      description: |
+        Starts KYC onboard for the customer. Requires `transfers:write` and `Idempotency-Key`.
+        Poll `POST /customers/{id}/strails/onboard-status` until `strails.userId` is set.
+      tags: [Customers]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bvn]
+              properties:
+                bvn:
+                  type: string
+                  pattern: '^\d{11}$'
+                  description: Nigerian BVN (11 digits).
+                email:
+                  type: string
+                  format: email
+                  description: Optional. Defaults to the customer's email.
+                phoneNumber:
+                  type: string
+                  description: Optional phone number.
+            example:
+              bvn: "22222222222"
+              email: "jane@example.com"
+      responses:
+        "200":
+          description: Onboarding started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customer:
+                        type: object
+                      onboard:
+                        type: object
+                        properties:
+                          requestId:
+                            type: string
+                            nullable: true
+                          status:
+                            type: string
+                            nullable: true
+                          userId:
+                            type: string
+                            nullable: true
+                          message:
+                            type: string
+                            nullable: true
+                          estimatedCompletionTime:
+                            type: string
+                            nullable: true
+
+  /customers/{id}/strails/onboard-status:
+    post:
+      operationId: getCustomerCngnOnboardStatus
+      summary: Poll cNGN onboard status
+      description: |
+        Checks KYC onboard progress. When a user id is available, links the customer and syncs wallet/VA.
+        Requires `transfers:write` and `Idempotency-Key`.
+      tags: [Customers]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requestId:
+                  type: string
+                  description: Optional. Defaults to the stored pending request id.
+            example: {}
+      responses:
+        "200":
+          description: Onboarding status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customer:
+                        type: object
+                      onboard:
+                        type: object
+
+  /customers/{id}/strails/link:
+    post:
+      operationId: linkCustomerCngn
+      summary: Link existing cNGN user id
+      description: Attach an existing wallet user id to the customer and sync. Requires `transfers:write`.
+      tags: [Customers]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [strailsUserId]
+              properties:
+                strailsUserId:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/Customer"
+
+  /customers/{id}/strails/sync:
+    post:
+      operationId: syncCustomerCngn
+      summary: Sync cNGN profile
+      description: Refresh wallet and virtual account from the provider. Requires `transfers:write`.
+      tags: [Customers]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
           $ref: "#/components/responses/Customer"
 
   /transactions:
@@ -3295,7 +3492,7 @@ paths:
       operationId: listRates
       summary: List exchange rates
       description: >
-        Returns live Relay indicative quotes for Solana EURC↔USDC.
+        Returns live indicative quotes for Solana EURC↔USDC.
         Requires `fx:read` scope. Always re-quote on `POST /swaps`.
       tags: [Rates]
       security:
@@ -3352,7 +3549,7 @@ paths:
       operationId: getPairRate
       summary: Get pair rate
       description: >
-        Live Relay indicative quote for a Solana EURC↔USDC pair.
+        Live indicative quote for a Solana EURC↔USDC pair.
         Optional `amount` and `tradeType` query params. Requires `fx:read` scope.
       tags: [Rates]
       security:
@@ -3439,7 +3636,7 @@ paths:
       operationId: createSwap
       summary: Create swap
       description: |
-        Creates a Solana EURC↔USDC swap via Relay and returns a deposit address.
+        Creates a Solana EURC↔USDC swap and returns a deposit address.
         RemitFlex does not custody funds. Deposit the `from` token to `depositAddress` before expiry.
         `refundTo` is always required. Tied to `customerId` (defaults to org primary customer).
         Requires `transfers:write` scope and an `Idempotency-Key` header.
@@ -3566,14 +3763,14 @@ paths:
                     status: error
                     message: Swap cannot be cancelled in current status
 
-  /rails/swaps:
+  /cngn/converts:
     get:
       operationId: listRailsSwaps
-      summary: List NGN rails swaps
+      summary: List cNGN swaps
       description: |
-        Lists StRails Smart Wallet swaps (CNGN/USDC/USDT). Separate from Solana Relay `/swaps`.
+        Lists Smart Wallet swaps (CNGN/USDC/USDT). Separate from Solana Relay `/swaps`.
         Requires `transfers:read` scope.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       responses:
@@ -3581,11 +3778,11 @@ paths:
           description: Rails swaps fetched
     post:
       operationId: createRailsSwap
-      summary: Create NGN rails swap
+      summary: Create cNGN swap
       description: |
-        Swaps CNGN ↔ USDC/USDT on the customer's StRails Smart Wallet via `POST /swap`.
-        Customer must be linked to a StRails user. Requires `transfers:write` and `Idempotency-Key`.
-      tags: [NGN rails]
+        Swaps CNGN ↔ USDC/USDT on the customer's Smart Wallet via `POST /swap`.
+        Customer must be cNGN-enabled for the customer. Requires `transfers:write` and `Idempotency-Key`.
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3623,14 +3820,14 @@ paths:
         "201":
           description: Rails swap created
         "422":
-          description: Customer not linked to StRails
+          description: Customer does not have cNGN enabled
 
-  /rails/swaps/{id}:
+  /cngn/converts/{id}:
     get:
       operationId: getRailsSwap
-      summary: Get NGN rails swap
-      description: Requires `transfers:read`. Syncs StRails `/swapstatus` on read by default.
-      tags: [NGN rails]
+      summary: Get cNGN swap
+      description: Requires `transfers:read`. Refreshes status on read by default.
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3651,12 +3848,12 @@ paths:
         "404":
           description: Not found
 
-  /rails/withdrawals:
+  /cngn/withdrawals:
     get:
       operationId: listRailsWithdrawals
-      summary: List NGN rails withdrawals
+      summary: List cNGN withdrawals
       description: Requires `transfers:read` scope.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       responses:
@@ -3664,11 +3861,11 @@ paths:
           description: Rails withdrawals fetched
     post:
       operationId: createRailsWithdrawal
-      summary: Create NGN rails withdrawal
+      summary: Create cNGN withdrawal
       description: |
         Withdraws CNGN/USDC/USDT from the user Smart Wallet to an external address (`/withdrawasset`).
         Requires `transfers:write` and `Idempotency-Key`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3707,11 +3904,11 @@ paths:
         "201":
           description: Rails withdrawal created
 
-  /rails/withdrawals/{id}:
+  /cngn/withdrawals/{id}:
     get:
       operationId: getRailsWithdrawal
-      summary: Get NGN rails withdrawal
-      tags: [NGN rails]
+      summary: Get cNGN withdrawal
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3727,16 +3924,16 @@ paths:
         "404":
           description: Not found
 
-  /rails/banks:
+  /cngn/banks:
     get:
       operationId: listRailsOfframpBanks
       summary: List supported NGN offramp banks
       description: |
         Nigerian banks supported for cNGN → NGN offramps and account-name
-        resolution (intersection of StRails NIBSS banks and PayCrest
+        resolution (intersection of supported NIBSS banks and name-enquiry
         institutions). Use `bankCode` values here for `resolve-account` and
-        `POST /rails/offramps`. Requires `transfers:read`.
-      tags: [NGN rails]
+        `POST /cngn/payouts`. Requires `transfers:read`.
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       responses:
@@ -3750,16 +3947,16 @@ paths:
                     bankCode: "058"
                 total: 1
 
-  /rails/offramps/resolve-account:
+  /cngn/payouts/resolve-account:
     post:
       operationId: resolveRailsOfframpAccount
       summary: Resolve NGN offramp account name
       description: |
         Resolves the account holder name for a Nigerian bank account via
-        PayCrest `verify-account`, keyed by a `bankCode` from
-        `GET /rails/banks`. Returns `422` if the account cannot be verified or
+        name enquiry (`verify-account`), keyed by a `bankCode` from
+        `GET /cngn/banks`. Returns `422` if the account cannot be verified or
         the bank is unsupported. Requires `transfers:read`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -3789,12 +3986,12 @@ paths:
         "422":
           description: Account could not be verified
 
-  /rails/offramps:
+  /cngn/payouts:
     get:
       operationId: listRailsOfframps
-      summary: List NGN rails user offramps
-      description: User cNGN → NGN bank offramps (not PayCrest `/offramps`). Requires `transfers:read`.
-      tags: [NGN rails]
+      summary: List cNGN user offramps
+      description: User cNGN → NGN bank offramps (not `/v1/offramps` local fiat). Requires `transfers:read`.
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       responses:
@@ -3802,11 +3999,11 @@ paths:
           description: Rails offramps fetched
     post:
       operationId: createRailsOfframp
-      summary: Create NGN rails user offramp
+      summary: Create cNGN user offramp
       description: |
         Offramps cNGN from the user Smart Wallet to a Nigerian bank (`/cngnofframp`).
         `amount` is in Naira. Requires `transfers:write` and `Idempotency-Key`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3842,12 +4039,12 @@ paths:
         "201":
           description: Rails offramp created
 
-  /rails/offramps/{id}:
+  /cngn/payouts/{id}:
     get:
       operationId: getRailsOfframp
-      summary: Get NGN rails user offramp
-      description: Requires `transfers:read`. Syncs StRails offramp status on read by default.
-      tags: [NGN rails]
+      summary: Get cNGN user offramp
+      description: Requires `transfers:read`. Refreshes status on read by default.
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3868,12 +4065,12 @@ paths:
         "404":
           description: Not found
 
-  /rails/onramps:
+  /cngn/payins:
     get:
       operationId: listRailsOnramps
-      summary: List NGN rails temporary VA onramps
+      summary: List cNGN temporary VA onramps
       description: Requires `transfers:read`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       responses:
@@ -3883,10 +4080,10 @@ paths:
       operationId: createRailsOnramp
       summary: Create temporary VA onramp
       description: |
-        Creates a StRails temporary virtual account for a fixed NGN amount (~30 min TTL).
+        Creates a temporary virtual account for a fixed NGN amount (~30 min TTL).
         Third-party deposits are accepted. Default `sweepToOfframp=true` moves minted
         tokens to the customer's permanent Smart Wallet. Requires `transfers:write`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -3924,12 +4121,12 @@ paths:
         "201":
           description: Rails onramp created
 
-  /rails/onramps/{id}:
+  /cngn/payins/{id}:
     get:
       operationId: getRailsOnramp
-      summary: Get NGN rails temporary VA onramp
-      description: Requires `transfers:read`. Syncs StRails onramp status on read by default. Response includes live `sweep` (temp vs main wallet balances / consolidate eligibility).
-      tags: [NGN rails]
+      summary: Get cNGN temporary VA onramp
+      description: Requires `transfers:read`. Refreshes status on read by default. Response includes live `sweep` (temp vs main wallet balances / consolidate eligibility).
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3950,20 +4147,20 @@ paths:
         "404":
           description: Not found
 
-  /rails/onramps/{id}/consolidate:
+  /cngn/payins/{id}/consolidate:
     post:
       operationId: consolidateRailsOnramp
       summary: Force-move temp VA funds to main Smart Wallet
       description: |
-        When StRails auto-sweep stalls after a temporary VA onramp, withdraws
+        When auto-sweep stalls after a temporary VA onramp, withdraws
         remaining cNGN from the generated temporary wallet into the customer's
         linked permanent Smart Wallet. Requires `transfers:write`.
 
-        Success is not inferred from a mined StRails hash alone: RemitFlex
+        Success is not inferred from a mined hash alone: RemitFlex
         re-reads the temporary wallet balance and prefers on-chain Transfer
         verification. Response `message` and `onramp.sweep.consolidate.status`
         may be `completed`, `incomplete` (retryable), `submitted`, or `failed`.
-      tags: [NGN rails]
+      tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3978,6 +4175,39 @@ paths:
           description: Consolidate withdrawal submitted
         "422":
           description: Nothing to move or wallets not ready
+        "404":
+          description: Not found
+
+  /cngn/deposits:
+    get:
+      operationId: listCngnDeposits
+      summary: List cNGN deposits
+      description: Returns locally persisted cNGN deposit records. Requires `transfers:read`.
+      tags: [cNGN]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: cNGN deposits
+
+  /cngn/deposits/{id}:
+    get:
+      operationId: getCngnDeposit
+      summary: Get a cNGN deposit
+      description: Returns a locally persisted cNGN deposit record. Requires `transfers:read`.
+      tags: [cNGN]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: cNGN deposit
         "404":
           description: Not found
 

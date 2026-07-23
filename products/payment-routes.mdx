@@ -10,7 +10,11 @@ Cross-chain pay-in: payer sends on one **network** (Bitcoin, Ethereum, Tron, etc
 
 For hosted checkout, use [Payment links](/products/payment-links) instead.
 
-Discover supported networks and corridors in [Networks & corridors](/concepts/networks-and-corridors) before creating a route.
+Discover supported networks in [Networks & corridors](/concepts/networks-and-corridors). Full table: [Corridor matrix](/concepts/corridor-matrix).
+
+<Tip>
+  Settling Solana **EURC ↔ USDC** as a collection path is fine for pay-ins. For treasury conversion with rates and a deposit lifecycle, use [Swaps](/products/swaps).
+</Tip>
 
 ## Endpoints
 
@@ -48,7 +52,7 @@ curl -X POST https://api.remitflex.io/v1/payment-routes \
 |-------|-------------|
 | `originChainKey` | Where payers send (e.g. `bitcoin`, `ethereum`, `tron`, `base`) |
 | `destinationChainKey` | Where you receive — `base` or `solana` |
-| `destinationCurrency` | Token code — `USDC` or `USDT` |
+| `destinationCurrency` | Token code — `USDC` or `USDT` on Base; `USDC`, `USDT`, or `EURC` on Solana |
 
 `originChainKey` and `destinationChainKey` are required when creating routes or payment links. Remitflex resolves networks internally — customers never send or receive chain IDs.
 

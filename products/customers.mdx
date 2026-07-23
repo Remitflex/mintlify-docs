@@ -1,7 +1,7 @@
 ---
 title: "Customers"
 sidebarTitle: "Customers"
-description: "Organise payers and beneficiaries under your organisation — the foundation for payment routes, payment links, and fiat rails."
+description: "Organise payers and beneficiaries under your organisation — the foundation for payment routes, payment links, local fiat, and cNGN."
 ---
 
 Customers represent the people or businesses you move money for — senders, recipients, merchants, or internal entities. Every organisation gets a **primary customer** at signup (representing the organisation itself). Existing routes without a customer are attributed to this primary customer.
@@ -65,7 +65,19 @@ curl -X POST https://api.remitflex.io/v1/customers \
 
 ## Dashboard
 
-View and filter activity per customer at [dashboard.remitflex.io](https://dashboard.remitflex.io) — **Overview**, **Transactions**, **Payment routes**, and per-customer receipts. API keys cannot manage dashboard-only settings.
+View and filter activity per customer at [dashboard.remitflex.io](https://dashboard.remitflex.io). On the customer **cNGN** tab you can **onboard with BVN** (or check pending status) to enable the Smart Wallet and NGN deposit account.
+
+## Enable cNGN
+
+```bash
+curl -X POST https://api.remitflex.io/v1/customers/{id}/strails/onboard \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{"bvn":"22222222222"}'
+```
+
+See [cNGN](/products/cngn#enable-cngn-onboard) for status polling and fields.
 
 ## API reference
 

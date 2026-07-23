@@ -21,15 +21,17 @@ Local fiat products (offramps and onramps) bridge stablecoins to bank accounts i
 
 | Product | Assets |
 |---------|--------|
-| **Payment routes & links** | Stablecoins on supported origin and destination chains |
+| **Payment routes & links** | Settle to Base USDC/USDT or Solana USDC/USDT/EURC — see [corridor matrix](/concepts/corridor-matrix) |
+| **Swaps** | Solana EURC ↔ USDC |
+| **cNGN** | CNGN, USDC, USDT on Base (customer wallet) |
 | **Offramps** | Stablecoin in (e.g. USDC on Base) → local fiat out |
 | **Onramps** | Local fiat in (e.g. NGN) → stablecoin out (e.g. USDC) |
 
 Check live support before integrating:
 
 ```bash
-# Cross-chain corridors
-curl https://api.remitflex.io/v1/payment-routes/corridors \
+# Cross-chain discovery
+curl https://api.remitflex.io/v1/payment-routes/chains \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 
 # Local fiat currencies
@@ -41,16 +43,18 @@ curl https://api.remitflex.io/v1/fiat/currencies \
 
 **USDC** — USD-pegged stablecoin. Default for treasury, diaspora pay-ins, and local fiat offramps. Broad liquidity on Solana and EVM chains.
 
-**EURC** — EUR-pegged stablecoin. Useful when your counterparty needs euros without a USD→EUR conversion step.
+**EURC** — EUR-pegged stablecoin on Solana (settlement and [swaps](/products/swaps)). Useful when your counterparty needs euros without a USD→EUR conversion step.
 
-**USDT** — Available on some corridors depending on chain liquidity. Check [Networks & corridors](/concepts/networks-and-corridors) for your route.
+**USDT** — Available on some corridors depending on chain. Check [Networks & corridors](/concepts/networks-and-corridors) for your route.
+
+**CNGN** — Naira stablecoin on Base via [cNGN](/products/cngn) customer wallets.
 
 ## What you do not manage
 
 Remitflex handles deposit addresses, on-chain execution, bank disbursement, and status tracking. Your integration:
 
-1. Creates a payment route, payment link, offramp, or onramp (optionally tied to a [customer](/products/customers))
+1. Creates a payment route, payment link, swap, offramp, onramp, or cNGN order (optionally tied to a [customer](/products/customers))
 2. Funds the order or shares deposit details with the payer
 3. Polls status or reads the [transactions ledger](/products/transactions)
 
-See product guides for each flow: [Payment routes](/products/payment-routes), [Payment links](/products/payment-links), [Local fiat](/products/fiat-rails).
+See product guides: [Payment routes](/products/payment-routes), [Payment links](/products/payment-links), [Swaps](/products/swaps), [Local fiat](/products/fiat-rails), [cNGN](/products/cngn).

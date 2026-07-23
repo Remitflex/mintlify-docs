@@ -9,7 +9,7 @@ Remitflex has two authentication modes:
 | Mode | Used for | Header |
 |------|----------|--------|
 | **Dashboard JWT** | Login, signup, API key management, admin ops | `Authorization: Bearer <accessToken>` |
-| **API key** | Payment routes, payment links, local fiat, rates, customers, transactions | `Authorization: Bearer rmf_live_...` or `rmf_test_...` |
+| **API key** | Payment routes, payment links, swaps, cNGN, local fiat, rates, customers, transactions | `Authorization: Bearer rmf_live_...` or `rmf_test_...` |
 
 This guide covers **API keys** for programmatic integrations. Dashboard login uses email OTP and JWT — see your dashboard app for that flow.
 
@@ -90,10 +90,10 @@ Each key is issued with one or more scopes. Scopes are enforced on API-key reque
 
 | Scope | Endpoints |
 |-------|-----------|
-| `fx:read` | `GET /v1/fiat/rates/:token/:amount/:currency` |
-| `transfers:read` | `GET /v1/transactions`, `/v1/customers` |
-| `transfers:write` | `POST /v1/customers` |
-| `collections:read` | `GET /v1/payment-routes`, `GET /v1/collections`, and related read endpoints |
+| `fx:read` | `GET /v1/fiat/rates/...`, `GET /v1/rates`, `GET /v1/rates/{from}/{to}` |
+| `transfers:read` | `GET /v1/transactions`, `/v1/customers`, `/v1/swaps`, `/v1/cngn/*` reads |
+| `transfers:write` | `POST /v1/customers`, `POST /v1/swaps`, `/v1/cngn/*` writes |
+| `collections:read` | `GET /v1/payment-routes`, `GET /v1/collections`, discovery `/chains` |
 | `collections:write` | `POST /v1/payment-routes`, `POST /v1/collections`, pause, activate, sync, cancel, logo upload |
 | `offramps:read` | `GET /v1/offramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
 | `offramps:write` | `POST /v1/offramps`, `DELETE /v1/offramps/:orderId`, `PATCH .../external-transfer`, `POST /v1/fiat/verify-account` |
@@ -119,7 +119,7 @@ These routes require a dashboard access token, not an API key:
 
 - `/v1/auth/*` — register, login, OTP, refresh, logout
 - `/v1/api-keys/*` — create, list, revoke keys
-- `/v1/admin/ops/*` — internal operations dashboard (caller email must be in `PLATFORM_ADMIN_EMAILS`)
+- `/v1/admin/ops/*` — RemitFlex internal ops only (not a merchant API)
 
 Webhook endpoint CRUD (`/v1/webhooks`) accepts **JWT or** API keys with `webhooks:read` / `webhooks:write`. See [Webhooks](/guides/webhooks).
 

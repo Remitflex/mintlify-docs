@@ -1,0 +1,203 @@
+---
+title: "cNGN"
+sidebarTitle: "cNGN"
+description: "NGN deposits, temporary payins, wallet converts, withdrawals, and bank payouts — Remitflex cNGN APIs."
+---
+
+RemitFlex **cNGN** APIs move Naira and cNGN for a **customer**: permanent bank deposit account, one-time payins, convert between `CNGN` / `USDC` / `USDT`, withdraw crypto, or pay out to a Nigerian bank.
+
+These are **not** the same as:
+
+| Product | What it does |
+|---------|----------------|
+| [Solana swaps](/products/swaps) | EURC↔USDC on Solana (`/v1/swaps`) |
+| [Local fiat](/products/fiat-rails) | Stablecoin ↔ local bank via `/v1/offramps` and `/v1/onramps` (no customer Smart Wallet) |
+
+<Tip>
+  Use **local fiat** for one-off bank payouts/deposits from your treasury. Use **cNGN** when the customer needs a linked wallet, permanent VA, or on-wallet CNGN/USDC/USDT converts.
+</Tip>
+
+**Prerequisite:** Enable cNGN for the customer with BVN onboard (dashboard **Customers → cNGN**, or API below). That creates the Smart Wallet and deposit account.
+
+## Enable cNGN (onboard)
+
+```bash
+curl -X POST https://api.remitflex.io/v1/customers/{id}/strails/onboard \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bvn": "22222222222",
+    "email": "optional@example.com",
+    "phoneNumber": "+2348012345678"
+  }'
+```
+
+| Field | Rules |
+|-------|-------|
+| `bvn` | Exactly 11 digits (**required**) |
+| `email` | Optional — defaults to the customer's email |
+| `phoneNumber` | Optional |
+
+Poll until linked:
+
+```bash
+curl -X POST https://api.remitflex.io/v1/customers/{id}/strails/onboard-status \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+When onboarding completes, the customer is linked automatically and `strails.userId` / virtual account appear. You can still attach an existing wallet user with `POST /v1/customers/{id}/strails/link`.
+
+**Required scopes:** `transfers:read`, `transfers:write`
+
+
+## Permanent vs temporary virtual accounts
+
+| | Permanent deposit account | Temporary payin |
+|--|---------------------------|-----------------|
+| Lifetime | Does not expire | ~30 minutes |
+| Amount | Any | Exact amount (includes fees) |
+| Who can pay | Account holder (BVN match) | Third parties OK |
+| How | On customer after sync | `POST /v1/cngn/payins` |
+| Destination | Customer Smart Wallet (cNGN) | Default: sweep to customer Smart Wallet |
+
+Permanent credits create local **`cngn_deposit`** rows (email + `cngn.deposit.*` webhooks). List with `GET /v1/cngn/deposits`.
+
+## Temporary payin (NGN → Smart Wallet)
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/payins \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000,
+    "customerId": "optional-customer-uuid",
+    "sweepToOfframp": true,
+    "autoSwap": false
+  }'
+```
+
+| Field | Description |
+|-------|-------------|
+| `amount` | Requested Naira (base). Fees are added — pay **`payAmount` / `totalAmount`** exactly |
+| `sweepToOfframp` | Default `true` — sweep minted cNGN to the customer's permanent Smart Wallet |
+| `autoSwap` | Optional — convert cNGN → `assetSwap` before sweep |
+| `assetSwap` | `USDC` or `USDT` (required when `autoSwap` is true) |
+| `customerId` | Optional; defaults to org primary customer |
+
+If auto-sweep stalls, funds can remain on the temporary wallet. Check `GET /v1/cngn/payins/{id}` → `sweep`, then:
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/payins/{id}/consolidate \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+| `sweep.consolidate.status` | Meaning |
+|----------------------------|---------|
+| `completed` | Temp wallet cleared (or Transfer to main verified) |
+| `incomplete` | Submitted but temp still holds cNGN — retryable |
+| `submitted` | Waiting for confirmation |
+| `failed` | Consolidate failed |
+
+Until a bank `accountNumber` exists, status stays **`requested`**. RemitFlex sets **`va_created`** only when an account number is present.
+
+Payins appear in [Transactions](/products/transactions) as `cngn_payin`.
+
+## Convert (cNGN ↔ USDC/USDT)
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/converts \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sellToken": "CNGN",
+    "buyToken": "USDC",
+    "amount": 5000,
+    "customerId": "optional-customer-uuid"
+  }'
+```
+
+| Field | Description |
+|-------|-------------|
+| `sellToken` / `buyToken` | `CNGN`, `USDC`, or `USDT` (must differ) |
+| `amount` | Human-readable amount of `sellToken` |
+| `slippage` | Optional max slippage % |
+| `smartWalletAddress` | Optional; defaults to customer's Smart Wallet |
+| `destinationAddress` | Optional destination for output tokens |
+| `customerId` | Optional; defaults to org primary customer |
+
+List: `GET /v1/cngn/converts`. Get: `GET /v1/cngn/converts/{id}`.
+
+## Withdrawal
+
+Send tokens from the customer's Smart Wallet to an external address:
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/withdrawals \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "internalWallet": "0xUserSmartWallet",
+    "destinationWallet": "0xExternal",
+    "amount": 100,
+    "ticker": "CNGN",
+    "network": "base"
+  }'
+```
+
+## Banks & account resolution
+
+List banks and verify account names before payout:
+
+```bash
+curl https://api.remitflex.io/v1/cngn/banks \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/payouts/resolve-account \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "accountNumber": "0123456789", "bankCode": "058" }'
+```
+
+Returns `422` when the account cannot be verified or the bank is not supported. `bankCode` on payouts must come from `GET /v1/cngn/banks`.
+
+## Payout (cNGN → NGN bank)
+
+```bash
+curl -X POST https://api.remitflex.io/v1/cngn/payouts \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000,
+    "accountNumber": "0123456789",
+    "bankCode": "058",
+    "ticker": "CNGN"
+  }'
+```
+
+`amount` is in **Naira**. Minimum payout is **₦151**.
+
+## Status, email, and webhooks
+
+Money events are **stored locally**. On create/update RemitFlex:
+
+- Emails the linked customer (and org owner when applicable)
+- Emits merchant webhooks: `cngn.deposit.*`, `cngn.payin.*`, `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`
+
+Open payins / converts / payouts / withdrawals also refresh on read (`GET .../:id`) and via background sync.
+
+All of the above appear in [Transactions](/products/transactions) (`cngn_deposit`, `cngn_payin`, `cngn_convert`, `cngn_withdrawal`, `cngn_payout`).
+
+## Balances vs transactions
+
+| Need | Use |
+|------|-----|
+| Live wallet balances | App **Refresh balances** |
+| Money history (source of truth) | `GET /v1/transactions` and `/v1/cngn/*` list endpoints |
+
+Do not treat provider ledger passthrough as the merchant ledger — RemitFlex transactions are local.

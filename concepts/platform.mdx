@@ -33,8 +33,10 @@ flowchart TD
 | **Customer** | A payer, beneficiary, or counterparty under your org. Orders are tied to customers for reporting. |
 | **Payment link** | Cross-chain pay URL (fixed or open amount) with hosted pay page and embed. API: `/v1/collections`. |
 | **Payment route** | Cross-chain collection route with a persistent deposit address. |
+| **Swap** | Solana EURC ↔ USDC conversion via deposit address. |
 | **Offramp** | Stablecoin in → local fiat bank payout. |
 | **Onramp** | Local fiat deposit → stablecoin delivery to a wallet. |
+| **cNGN** | Customer Smart Wallet rails — NGN VA, convert, withdraw, bank payout. |
 | **Transaction** | Ledger row for any product above — use for dashboards and reconciliation. |
 | **API key** | Scoped programmatic access. Created in the dashboard. |
 
@@ -55,8 +57,10 @@ API base: `https://api.remitflex.io/v1`
 |---------|----------|----------------|----------|
 | **Payment links** | — (payer funds) | Stablecoin at your wallet | Invoices, checkout, embeddable pay buttons |
 | **Payment routes** | — (payer funds) | Stablecoin on your chosen chain | Persistent collection addresses |
+| **Swaps** | USDC or EURC on Solana | The other token on Solana | Treasury EURC↔USDC |
 | **Offramps** | Stablecoin | Local fiat in a bank account | Supplier payouts, payroll, remittance to bank |
 | **Onramps** | — (user deposits fiat) | Stablecoin at a wallet | Funding crypto wallets from local currency |
+| **cNGN** | NGN or wallet tokens | Wallet / NGN bank | Customer VA + convert + payout |
 
 ## Scopes
 
@@ -64,9 +68,9 @@ API keys use fine-grained scopes. Grant only what each service needs:
 
 | Scope | Access |
 |-------|--------|
-| `fx:read` | Fiat sell quotes (`/v1/fiat/rates/...`) |
-| `transfers:read` | Read customers, transactions |
-| `transfers:write` | Create customers |
+| `fx:read` | Fiat sell quotes and Solana swap rates |
+| `transfers:read` | Customers, transactions, swaps, cNGN reads |
+| `transfers:write` | Create customers, swaps, cNGN writes |
 | `collections:read` | Read payment routes and payment links |
 | `collections:write` | Create and manage payment routes and payment links |
 | `offramps:read` | Read offramp orders, fiat currencies and institutions |
