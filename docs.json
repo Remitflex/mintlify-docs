@@ -113,6 +113,7 @@
             "group": "Integration",
             "pages": [
               "configuration/environments",
+              "guides/webhooks",
               "guides/testing",
               "configuration/error-codes"
             ]
@@ -254,6 +255,20 @@
             "group": "Transactions",
             "pages": [
               "GET /transactions"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "GET /webhooks/event-types",
+              "GET /webhooks",
+              "POST /webhooks",
+              "GET /webhooks/{id}",
+              "PATCH /webhooks/{id}",
+              "DELETE /webhooks/{id}",
+              "POST /webhooks/{id}/rotate-secret",
+              "GET /webhooks/{id}/deliveries",
+              "POST /webhooks/{id}/test"
             ]
           }
         ]

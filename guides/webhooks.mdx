@@ -1,0 +1,94 @@
+---
+title: "Webhooks"
+sidebarTitle: "Webhooks"
+description: "Receive signed HTTPS POSTs on every money-flow status change."
+---
+
+RemitFlex can POST signed JSON events to your HTTPS endpoints whenever a swap, payment route, collection, PayCrest order, or NGN rails object is created or changes status.
+
+Manage endpoints in the [dashboard](https://dashboard.remitflex.io) under **Developer → Webhooks**, or via the API with JWT or an API key that includes `webhooks:read` / `webhooks:write`.
+
+## Quick setup
+
+<Steps>
+  <Step title="Create an endpoint">
+    `POST /v1/webhooks` with an HTTPS `url`. Optionally set `events` to an allowlist; omit or pass `null` to receive all event types.
+  </Step>
+  <Step title="Store the signing secret">
+    The create (and rotate) response includes `secret` (`whsec_…`) **once**. Use it to verify `X-Remitflex-Signature`.
+  </Step>
+  <Step title="Verify and acknowledge">
+    Validate the signature, then return `2xx` within ~10 seconds. RemitFlex retries failed deliveries with exponential backoff (up to 8 attempts).
+  </Step>
+</Steps>
+
+## Delivery headers
+
+| Header | Meaning |
+|--------|---------|
+| `Content-Type` | `application/json` |
+| `X-Remitflex-Event` | Event type (e.g. `swap.updated`) |
+| `X-Remitflex-Delivery` | Delivery id |
+| `X-Remitflex-Timestamp` | Unix timestamp (seconds) |
+| `X-Remitflex-Signature` | `t={ts},v1={hmac_hex}` |
+
+### Signature verification
+
+```text
+signed_payload = `${timestamp}.${rawBody}`
+expected = HMAC_SHA256(signing_secret, signed_payload)  // hex
+```
+
+Compare `v1` from the header to `expected` (constant-time). Reject if the timestamp is too far from your clock (e.g. ±5 minutes) to limit replay.
+
+## Payload shape
+
+```json
+{
+  "id": "event-uuid",
+  "type": "swap.updated",
+  "created": "2026-07-23T00:00:00.000Z",
+  "data": {
+    "id": "resource-uuid",
+    "status": "completed",
+    "previousStatus": "swapping"
+  }
+}
+```
+
+`data` is a resource snapshot. Status transitions include `previousStatus` and `status` (`previousStatus` is `null` on create).
+
+## Event catalog
+
+| Family | Types |
+|--------|-------|
+| Solana swaps | `swap.created`, `swap.updated` |
+| Payment routes | `payment_route.created`, `payment_route.updated`, `payment_route.deposit.updated` |
+| Collections | `collection.created`, `collection.updated` |
+| PayCrest | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |
+| NGN rails | `rails.swap.*`, `rails.withdrawal.*`, `rails.offramp.*`, `rails.onramp.*` (`.created` / `.updated`) |
+| Test | `webhook.test` (from `POST /v1/webhooks/:id/test`) |
+
+Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states.
+
+## API
+
+| Method | Path | Scope |
+|--------|------|-------|
+| `POST` | `/v1/webhooks` | `webhooks:write` |
+| `GET` | `/v1/webhooks` | `webhooks:read` |
+| `GET` | `/v1/webhooks/:id` | `webhooks:read` |
+| `PATCH` | `/v1/webhooks/:id` | `webhooks:write` |
+| `POST` | `/v1/webhooks/:id/rotate-secret` | `webhooks:write` |
+| `DELETE` | `/v1/webhooks/:id` | `webhooks:write` (soft revoke) |
+| `GET` | `/v1/webhooks/:id/deliveries` | `webhooks:read` |
+| `POST` | `/v1/webhooks/:id/test` | `webhooks:write` |
+| `GET` | `/v1/webhooks/event-types` | `webhooks:read` |
+
+Dashboard JWT sessions can call these routes without scopes. API keys need the matching `webhooks:*` scope.
+
+## Security notes
+
+- URL must be **HTTPS**. Private, loopback, and link-local targets are rejected (SSRF protection).
+- Signing secrets are stored server-side so RemitFlex can sign outbound deliveries; the raw value is only shown on create/rotate.
+- Inbound provider webhooks (`/v1/webhooks/paycrest`, `/v1/webhooks/strails`) are separate from merchant outbound endpoints.

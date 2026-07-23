@@ -3980,3 +3980,219 @@ paths:
           description: Nothing to move or wallets not ready
         "404":
           description: Not found
+
+  /webhooks/event-types:
+    get:
+      operationId: listWebhookEventTypes
+      summary: List webhook event types
+      description: Requires `webhooks:read` (or dashboard JWT).
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Event type catalog
+
+  /webhooks:
+    get:
+      operationId: listWebhookEndpoints
+      summary: List webhook endpoints
+      description: Requires `webhooks:read` (or dashboard JWT).
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Endpoints for the organisation
+    post:
+      operationId: createWebhookEndpoint
+      summary: Create webhook endpoint
+      description: |
+        Requires `webhooks:write` (or dashboard JWT). Returns `secret` (`whsec_…`) once.
+        URL must be HTTPS and must not resolve to a private IP.
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/webhooks/remitflex
+                description:
+                  type: string
+                  maxLength: 200
+                  nullable: true
+                events:
+                  type: array
+                  nullable: true
+                  items:
+                    type: string
+                  description: Allowlist of event types. Empty/null = all events.
+                enabled:
+                  type: boolean
+                  default: true
+      responses:
+        "201":
+          description: Endpoint created (includes secret once)
+
+  /webhooks/{id}:
+    get:
+      operationId: getWebhookEndpoint
+      summary: Get webhook endpoint
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Endpoint fetched
+        "404":
+          description: Not found
+    patch:
+      operationId: updateWebhookEndpoint
+      summary: Update webhook endpoint
+      description: Update url, events, description, and/or enabled. Requires `webhooks:write`.
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                description:
+                  type: string
+                  nullable: true
+                events:
+                  type: array
+                  nullable: true
+                  items:
+                    type: string
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Endpoint updated
+        "404":
+          description: Not found
+    delete:
+      operationId: revokeWebhookEndpoint
+      summary: Revoke webhook endpoint
+      description: Soft-revoke (sets revokedAt). Requires `webhooks:write`.
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Endpoint revoked
+        "404":
+          description: Not found
+
+  /webhooks/{id}/rotate-secret:
+    post:
+      operationId: rotateWebhookSecret
+      summary: Rotate webhook signing secret
+      description: Returns a new `secret` once. Requires `webhooks:write`.
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Secret rotated
+        "404":
+          description: Not found
+
+  /webhooks/{id}/deliveries:
+    get:
+      operationId: listWebhookDeliveries
+      summary: List recent deliveries for an endpoint
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Delivery log
+        "404":
+          description: Not found
+
+  /webhooks/{id}/test:
+    post:
+      operationId: testWebhookEndpoint
+      summary: Queue a test ping event
+      description: Enqueues `webhook.test` to the endpoint. Requires `webhooks:write`.
+      tags: [Webhooks]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Test event queued
+        "400":
+          description: Endpoint disabled
+        "404":
+          description: Not found

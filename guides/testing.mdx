@@ -90,6 +90,23 @@ curl -s "$API_BASE/fiat/rates/USDC/10/NGN" \
 
 Use the returned rate when creating a live offramp. See [Local fiat](/products/fiat-rails) for the full payout flow.
 
+## Webhooks
+
+Create a key with `webhooks:write`, then register an HTTPS receiver:
+
+```bash
+curl -s -X POST "$API_BASE/webhooks" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/webhooks/remitflex",
+    "events": ["swap.updated", "collection.updated"]
+  }' | jq .
+```
+
+Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping. See [Webhooks](/guides/webhooks).
+
 ## Retries
 
 Send `Idempotency-Key` on every mutating request. Reuse the same key to safely retry after a timeout; use a new key for each distinct operation.

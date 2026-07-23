@@ -101,7 +101,7 @@ Each key is issued with one or more scopes. Scopes are enforced on API-key reque
 | `onramps:write` | `POST /v1/onramps`, `POST /v1/fiat/verify-account` |
 | `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
 | `wallets:read` / `wallets:write` | Reserved for future wallet APIs |
-| `webhooks:read` / `webhooks:write` | Reserved for future webhook management |
+| `webhooks:read` / `webhooks:write` | List/manage outbound webhook endpoints (`/v1/webhooks`) |
 
 Grant the minimum scopes required. A read-only reporting tool only needs `transfers:read` and `fx:read`.
 
@@ -120,6 +120,8 @@ These routes require a dashboard access token, not an API key:
 - `/v1/auth/*` — register, login, OTP, refresh, logout
 - `/v1/api-keys/*` — create, list, revoke keys
 - `/v1/admin/ops/*` — internal operations dashboard (caller email must be in `PLATFORM_ADMIN_EMAILS`)
+
+Webhook endpoint CRUD (`/v1/webhooks`) accepts **JWT or** API keys with `webhooks:read` / `webhooks:write`. See [Webhooks](/guides/webhooks).
 
 ## Error responses
 

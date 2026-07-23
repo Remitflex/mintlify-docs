@@ -74,13 +74,13 @@ API keys use fine-grained scopes. Grant only what each service needs:
 | `onramps:read` | Read onramp orders, fiat currencies and institutions |
 | `onramps:write` | Create onramps, verify bank accounts |
 | `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
+| `webhooks:read` / `webhooks:write` | Manage outbound webhook endpoints |
 
 See [Authentication](/authentication) for key format and idempotency rules.
 
 ## What we do not do yet
 
-- **Outbound webhooks** — poll order endpoints or the transactions ledger for now
-- **Self-serve API key creation via API** — keys are created in the dashboard
+- **Self-serve API key creation via API** — keys are created in the dashboard (JWT)
 - **Custodial wallets** — scopes exist; wallet APIs are not live
 
-The API surface will expand without breaking existing v1 contracts where possible.
+For push updates, see [Webhooks](/guides/webhooks). The API surface will expand without breaking existing v1 contracts where possible.
