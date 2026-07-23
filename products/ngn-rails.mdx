@@ -182,7 +182,8 @@ confirm the account name with `resolve-account` before creating the offramp —
 
 Open rails swaps and offramps are refreshed by:
 
-- StRails webhooks (`swap.*`, `vault.return.*`, `fintech.user.asset.transfer.*`, …)
+- StRails webhooks (`swap.*`, `vault.return.*`, `fintech.offramp.*`, `fintech.user.asset.transfer.*`, `fintech.user.deposit.*`, VA/payment/funding events) plus `rails-sync` polling
+- Customer/owner **email updates** on rails status changes (VA ready, payment confirmed, completed/failed/refunded, swap/withdrawal/offramp outcomes) via the same receipt mailer as other products
 - Background `rails-sync` job
 - Sync-on-read for `GET .../swaps/:id` and `GET .../offramps/:id`
 
