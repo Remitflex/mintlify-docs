@@ -6,7 +6,7 @@ description: "Receive signed HTTPS POSTs on every money-flow status change."
 
 RemitFlex can POST signed JSON events to your HTTPS endpoints whenever a swap, payment route, collection, local fiat order, or cNGN object is created or changes status.
 
-Manage endpoints in the [dashboard](https://dashboard.remitflex.io) under **Developer → Webhooks**, or via the API with JWT or an API key that includes `webhooks:read` / `webhooks:write`.
+Manage endpoints in the [merchant app](https://app.remitflex.io/webhooks) under **Webhooks**, or via the API with JWT or an API key that includes `webhooks:read` / `webhooks:write`.
 
 ## Quick setup
 
@@ -62,7 +62,7 @@ Compare `v1` from the header to `expected` (constant-time). Reject if the timest
 
 | Family | Types |
 |--------|-------|
-| Solana swaps | `swap.created`, `swap.updated` |
+| Swaps | `swap.created`, `swap.updated` |
 | Payment routes | `payment_route.created`, `payment_route.updated`, `payment_route.deposit.updated` |
 | Collections | `collection.created`, `collection.updated` |
 | Local fiat | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |

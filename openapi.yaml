@@ -2712,7 +2712,9 @@ paths:
     post:
       operationId: syncCustomerCngn
       summary: Sync cNGN profile
-      description: Refresh wallet and virtual account from the provider. Requires `transfers:write`.
+      description: >
+        Refresh virtual account, wallet list, and ledger from StRails into the local database.
+        Dashboard history and wallet metadata read from this cache. Requires `transfers:write`.
       tags: [Customers]
       security:
         - ApiKeyAuth: []
@@ -2727,6 +2729,77 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/Customer"
+
+  /org/settings:
+    get:
+      operationId: getOrgSettings
+      summary: Get organisation settings
+      description: >
+        Returns merchant settings including whether customer receipt emails are enabled.
+        Requires `transfers:read`. Dashboard JWT also works.
+      tags: [Organisation]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Organisation settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [orgId, name, customerReceiptsEnabled, updatedAt]
+                properties:
+                  orgId:
+                    type: string
+                  name:
+                    type: string
+                  customerReceiptsEnabled:
+                    type: boolean
+                    description: >
+                      When true, terminal receipts are emailed to customers and payment-link payers.
+                      Dashboard users always receive receipts.
+                  updatedAt:
+                    type: string
+                    format: date-time
+    patch:
+      operationId: updateOrgSettings
+      summary: Update organisation settings
+      description: >
+        Toggle customer receipt emails and other org preferences. Requires `transfers:write`.
+      tags: [Organisation]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [customerReceiptsEnabled]
+              properties:
+                customerReceiptsEnabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated organisation settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [orgId, name, customerReceiptsEnabled, updatedAt]
+                properties:
+                  orgId:
+                    type: string
+                  name:
+                    type: string
+                  customerReceiptsEnabled:
+                    type: boolean
+                  updatedAt:
+                    type: string
+                    format: date-time
 
   /transactions:
     get:

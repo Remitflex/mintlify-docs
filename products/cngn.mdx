@@ -51,6 +51,8 @@ curl -X POST https://api.remitflex.io/v1/customers/{id}/strails/onboard-status \
 
 When onboarding completes, the customer is linked automatically and `strails.userId` / virtual account appear. You can still attach an existing wallet user with `POST /v1/customers/{id}/strails/link`.
 
+Refresh the local cache (VA, wallet list, deposit/payout ledger) with `POST /v1/customers/{id}/strails/sync`. Dashboard history and wallet metadata read from that cache. `GET /v1/customers/{id}/strails/wallets` still fetches **live balances** only.
+
 **Required scopes:** `transfers:read`, `transfers:write`
 
 

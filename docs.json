@@ -119,6 +119,13 @@
             ]
           },
           {
+            "group": "Organisation",
+            "pages": [
+              "GET /org/settings",
+              "PATCH /org/settings"
+            ]
+          },
+          {
             "group": "Customers",
             "pages": [
               "GET /customers",

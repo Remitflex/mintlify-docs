@@ -22,7 +22,7 @@ One endpoint for reconciliation across Remitflex products. Returns up to 200 rec
 | `cngn_payin` | Temporary VA payin |
 | `cngn_deposit` | Permanent VA deposit |
 
-Each row includes `status`, `amount`, `destination`, and `receipt`. Terminal statuses trigger a branded email to the linked customer and creating user.
+Each row includes `status`, `amount`, `destination`, and `receipt`. In the merchant dashboard, **Receipt** opens a branded receipt card (download / print) built from that `receipt` blob. Terminal statuses also email a branded receipt to the creating dashboard user, and to the linked customer when **Settings → Customer receipts** is on (`org.customerReceiptsEnabled`, default on).
 
 ## Filtering
 
