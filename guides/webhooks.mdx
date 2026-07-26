@@ -69,7 +69,7 @@ Compare `v1` from the header to `expected` (constant-time). Reject if the timest
 | cNGN | `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`, `cngn.payin.*`, `cngn.deposit.*` (`.created` / `.updated`); `cngn.customer.enabled`, `cngn.customer.failed` |
 | Test | `webhook.test` (from `POST /v1/webhooks/{webhookEndpointId}/test` — delivered to that endpoint even if it is not on the allowlist) |
 
-Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states. `cngn.customer.enabled` / `.failed` fire once when KYC finishes.
+Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states. `cngn.customer.enabled` fires once when KYC finishes and names match; `cngn.customer.failed` fires once on KYC failure or `customer_name_bvn_mismatch`.
 
 ## API
 
