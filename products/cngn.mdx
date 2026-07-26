@@ -43,7 +43,7 @@ curl -X POST https://api.remitflex.io/v1/cngn/customers/{customerId}/enable \
 
 Enablement is **asynchronous**. When KYC finishes, RemitFlex emits `cngn.customer.enabled` (or `cngn.customer.failed`). The customer object includes `cngn: { enabled, identityMatched, status, legalName, evmWallet, virtualAccount, syncedAt }` — `null` when cNGN has never been started.
 
-Create the customer with the **BVN holder's real name**. On sync, RemitFlex stores the full StRails `/getuserdetails` profile, but only exposes legal name / VA / wallet to you when that KYC name matches `customer.name` (blocks BVN fishing). On mismatch, `identityMatched` is `false`, `enabled` is `false`, PII fields are null, and RemitFlex emits `cngn.customer.failed` once with `code: customer_name_bvn_mismatch` / `reason: Customer name does not match BVN holder`.
+Create the customer with the **BVN holder's full legal name** (first and last). On sync, RemitFlex stores the full StRails `/getuserdetails` profile, but only exposes legal name / VA / wallet when that KYC name matches `customer.name` under a strict multi-part name check (blocks BVN fishing). Single given names are not enough. On mismatch, `identityMatched` is `false`, `enabled` is `false`, PII fields are null, and RemitFlex emits `cngn.customer.failed` once with `code: customer_name_bvn_mismatch` / `reason: Customer name does not match BVN holder`. Until identity is verified (`identityMatched: true`), PII stays hidden.
 
 Reload the customer with `GET /v1/customers/{customerId}`, or subscribe to webhooks.
 

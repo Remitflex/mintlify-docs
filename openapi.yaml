@@ -1382,6 +1382,9 @@ components:
           type: string
           minLength: 2
           maxLength: 120
+          description: >
+            Full legal name (at least first and last). Required shape for cNGN BVN
+            identity matching — single given names are rejected.
         email:
           type: string
           format: email
@@ -1389,7 +1392,7 @@ components:
         type:
           type: string
           enum: [individual, business]
-          default: business
+          default: individual
 
     Customer:
       type: object
@@ -1411,9 +1414,10 @@ components:
           description: >
             Present when cNGN enablement has been started or completed.
             `null` when the customer has never enabled cNGN.
-            When `identityMatched` is false, RemitFlex withholds StRails PII
+            When `identityMatched` is not `true`, RemitFlex withholds StRails PII
             (legal name, VA, wallet) so a mismatched BVN cannot leak another
-            person's identity to the merchant.
+            person's identity to the merchant. Matching requires a multi-part
+            name (first + last) with strong overlap to KYC / VA name.
           properties:
             enabled:
               type: boolean

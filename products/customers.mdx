@@ -70,7 +70,7 @@ curl -X POST https://api.remitflex.io/v1/customers \
 
 | Field | Rules |
 |-------|-------|
-| `name` | 2–120 characters |
+| `name` | 2–120 characters; **at least first and last** (required for cNGN BVN name matching) |
 | `email` | Valid email |
 | `type` | `individual` or `business` (default: `individual`) |
 
@@ -80,7 +80,7 @@ View and filter activity per customer at [dashboard.remitflex.io](https://dashbo
 
 ## Enable cNGN
 
-Use the RemitFlex customer UUID from the list or create response as `{customerId}`. Use the **BVN holder's real name** on the customer — after KYC, RemitFlex only exposes StRails profile data when names match.
+Use the RemitFlex customer UUID from the list or create response as `{customerId}`. Use the **BVN holder's full legal name** (first and last) on the customer — after KYC, RemitFlex only exposes StRails profile data when names match under a strict check.
 
 ```bash
 curl -X POST https://api.remitflex.io/v1/cngn/customers/{customerId}/enable \
