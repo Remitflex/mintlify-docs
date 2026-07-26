@@ -4479,7 +4479,10 @@ paths:
     post:
       operationId: testWebhookEndpoint
       summary: Queue a test ping event
-      description: Enqueues `webhook.test` to the endpoint. Requires `webhooks:write`.
+      description: |
+        Enqueues `webhook.test` to **this endpoint only**, bypassing the event allowlist.
+        Requires `webhooks:write`. Returns 502 if the delivery job could not be queued
+        (e.g. Redis/worker enqueue failure).
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4493,11 +4496,13 @@ paths:
         - $ref: "#/components/parameters/IdempotencyKey"
       responses:
         "200":
-          description: Test event queued
+          description: Test event queued to BullMQ
         "400":
           description: Endpoint disabled
         "404":
           description: Not found
+        "502":
+          description: Failed to queue delivery job
 
   /notifications:
     get:

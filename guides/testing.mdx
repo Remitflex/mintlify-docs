@@ -144,7 +144,9 @@ curl -s -X POST "$API_BASE/webhooks" \
   }' | jq .
 ```
 
-Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping. Simulated settlements still emit real outbound webhooks to your endpoint. See [Webhooks](/guides/webhooks).
+Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping for **that endpoint** (the test bypasses the event allowlist). Simulated settlements still emit real outbound webhooks to your endpoint. See [Webhooks](/guides/webhooks).
+
+If you register with a narrow `events` allowlist, money events still require those types to be listed — only the dedicated test ping is exempt.
 
 ## Retries
 
