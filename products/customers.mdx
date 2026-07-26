@@ -80,7 +80,7 @@ View and filter activity per customer at [dashboard.remitflex.io](https://dashbo
 
 ## Enable cNGN
 
-Use the RemitFlex customer UUID from the list or create response as `{customerId}`.
+Use the RemitFlex customer UUID from the list or create response as `{customerId}`. Use the **BVN holder's real name** on the customer — after KYC, RemitFlex only exposes StRails profile data when names match.
 
 ```bash
 curl -X POST https://api.remitflex.io/v1/cngn/customers/{customerId}/enable \

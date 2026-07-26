@@ -1411,12 +1411,26 @@ components:
           description: >
             Present when cNGN enablement has been started or completed.
             `null` when the customer has never enabled cNGN.
+            When `identityMatched` is false, RemitFlex withholds StRails PII
+            (legal name, VA, wallet) so a mismatched BVN cannot leak another
+            person's identity to the merchant.
           properties:
             enabled:
               type: boolean
+              description: True only when linked and KYC name matches customer.name.
+            identityMatched:
+              type: boolean
+              nullable: true
+              description: >
+                Whether the merchant customer name matches StRails KYC / VA name.
+                `false` means BVN holder does not match this customer.
             status:
               type: string
               nullable: true
+            legalName:
+              type: string
+              nullable: true
+              description: StRails KYC name — only when identityMatched is not false.
             evmWallet:
               type: string
               nullable: true
