@@ -69,8 +69,10 @@ View and filter activity per customer at [dashboard.remitflex.io](https://dashbo
 
 ## Enable cNGN
 
+Use the RemitFlex customer UUID from the list or create response as `{customerId}`.
+
 ```bash
-curl -X POST https://api.remitflex.io/v1/cngn/customers/{id}/enable \
+curl -X POST https://api.remitflex.io/v1/cngn/customers/{customerId}/enable \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \

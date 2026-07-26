@@ -66,16 +66,18 @@ Both modes support **`pricingType`**:
 
 Auth: API key or dashboard JWT. Writes with an API key need `Idempotency-Key`.
 
+`{collectionId}` is the RemitFlex payment link UUID from `POST` or `GET /collections` (invoice id or checkout parent id).
+
 Discover supported networks and corridors in [Networks & corridors](/concepts/networks-and-corridors) (`GET /collections/chains` and `GET /collections/corridors` mirror the payment-routes discovery endpoints).
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/collections` | Create link → returns `payUrl`, `embedUrl` |
 | `GET` | `/collections` | List parent links only (`?customerId=` optional) |
-| `GET` | `/collections/{id}` | Get link; checkout parents include `sessions[]` |
-| `PATCH` | `/collections/{id}` | Update metadata, embed theme, or cancel |
-| `POST` | `/collections/{id}/sync` | Pull latest deposit status from chain |
-| `POST` | `/collections/{id}/logo` | Upload logo (multipart, max 2 MB) |
+| `GET` | `/collections/{collectionId}` | Get link; checkout parents include `sessions[]` |
+| `PATCH` | `/collections/{collectionId}` | Update metadata, embed theme, or cancel |
+| `POST` | `/collections/{collectionId}/sync` | Pull latest deposit status from chain |
+| `POST` | `/collections/{collectionId}/logo` | Upload logo (multipart, max 2 MB) |
 
 ### Create an invoice
 
@@ -95,7 +97,7 @@ curl -X POST https://api.remitflex.io/v1/collections \
   }'
 ```
 
-Share `payUrl`. The payer quotes and pays on that same id. Poll `GET /collections/{id}` or `GET /pay/{id}` for status.
+Share `payUrl`. The payer quotes and pays on that same id. Poll `GET /collections/{collectionId}` or `GET /pay/{collectionId}` for status (for invoices, both use the same `{collectionId}`).
 
 ### Create a checkout link
 
@@ -129,43 +131,45 @@ When a payer requests a quote (`POST /pay/{parentId}/quote`), Remitflex creates 
 
 ### Update
 
-Use **`PATCH /collections/{id}`** on the **parent** link (invoice or checkout). Sessions cannot be PATCHed.
+Use **`PATCH /collections/{collectionId}`** on the **parent** link (invoice or checkout). Sessions cannot be PATCHed.
 
 ```bash
 # Edit labels
-curl -X PATCH https://api.remitflex.io/v1/collections/{id} \
+curl -X PATCH https://api.remitflex.io/v1/collections/{collectionId} \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"label": "Invoice #1042 — revised", "fromName": "Acme Ltd"}'
 
 # Save embed theme
-curl -X PATCH https://api.remitflex.io/v1/collections/{id} \
+curl -X PATCH https://api.remitflex.io/v1/collections/{collectionId} \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"embedConfig": {"layout": "minimal", "accentColor": "#0F766E"}}'
 
 # Cancel invoice or checkout parent
-curl -X PATCH https://api.remitflex.io/v1/collections/{id} \
+curl -X PATCH https://api.remitflex.io/v1/collections/{collectionId} \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"status": "cancelled"}'
 ```
 
-**Logo** — `POST /collections/{id}/logo` (multipart). **Sync** — `POST /collections/{id}/sync`. Legacy aliases `POST .../cancel` and `PATCH .../embed-config` still work.
+**Logo** — `POST /collections/{collectionId}/logo` (multipart). **Sync** — `POST /collections/{collectionId}/sync`. Legacy aliases `POST .../cancel` and `PATCH .../embed-config` still work.
 
 ## Payer endpoints
 
 No auth.
 
+On pay routes, `{collectionId}` is the payment link UUID — the invoice id, checkout **parent** id (for quote), or checkout **session** id (after quote).
+
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/pay/{id}` | Pay page data (destination, options, status) |
-| `POST` | `/pay/{id}/quote` | Choose origin + return address → deposit address |
-| `GET` | `/pay/{id}/logo` | Public logo image |
-| `GET` | `/pay/{id}/embed-config` | Theme for embed iframe |
+| `GET` | `/pay/{collectionId}` | Pay page data (destination, options, status) |
+| `POST` | `/pay/{collectionId}/quote` | Choose origin + return address → deposit address |
+| `GET` | `/pay/{collectionId}/logo` | Public logo image |
+| `GET` | `/pay/{collectionId}/embed-config` | Theme for embed iframe |
 
 ```bash
-curl -X POST https://api.remitflex.io/v1/pay/{id}/quote \
+curl -X POST https://api.remitflex.io/v1/pay/{collectionId}/quote \
   -H "Content-Type: application/json" \
   -d '{
     "originChainKey": "tron",
@@ -189,7 +193,7 @@ When creating a link, set `payerFields` to collect information from payers befor
 | `kyc` | Document type, number, and country |
 | `metadata` | Custom field — set `label` (e.g. `Tax ID`, `PO number`) |
 
-Each field has `required: true` or `false`. On quote (`POST /pay/{id}/quote`), send collected values in `payerDetails`:
+Each field has `required: true` or `false`. On quote (`POST /pay/{collectionId}/quote`), send collected values in `payerDetails`:
 
 ```json
 {
@@ -213,7 +217,7 @@ Each field has `required: true` or `false`. On quote (`POST /pay/{id}/quote`), s
 }
 ```
 
-Collected `payerDetails` appear on `GET /collections/{id}` and checkout session lists.
+Collected `payerDetails` appear on `GET /collections/{collectionId}` and checkout session lists.
 
 On the hosted pay page, **Connect wallet** is available for **EVM and Solana** fixed-amount payments. **Bitcoin and Tron** payers use **Send manually** — copy the deposit address and pay from any wallet or exchange.
 
@@ -239,9 +243,9 @@ Fixed pricing: quote expires in ~1 min (`quoteValidUntil`). Open pricing: re-quo
 
 Works for **invoice** and **checkout** parent ids.
 
-1. **Theme** — `PATCH /collections/{id}` (`embedConfig`) or dashboard **Payment Links → Embed**
+1. **Theme** — `PATCH /collections/{collectionId}` (`embedConfig`) or dashboard **Payment Links → Embed**
 2. **Loader** — `embed.js` opens a modal or inline iframe at `/embed/{linkId}`
-3. **Pay UI** — theme from `GET /pay/{id}/embed-config` (checkout sessions inherit parent theme)
+3. **Pay UI** — theme from `GET /pay/{collectionId}/embed-config` (checkout sessions inherit parent theme)
 
 **Modal button:**
 

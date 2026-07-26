@@ -92,7 +92,7 @@ curl -s -X POST "$API_BASE/collections" \
   }' | jq .
 ```
 
-Share the same `payUrl` for every visitor. Each quote creates a session — list them with `GET /collections/{id}`.
+Share the same `payUrl` for every visitor. Each quote creates a session — list them with `GET /collections/{collectionId}` (checkout parent UUID).
 
 ## Payment route
 
@@ -144,7 +144,7 @@ curl -s -X POST "$API_BASE/webhooks" \
   }' | jq .
 ```
 
-Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping for **that endpoint** (the test bypasses the event allowlist). Simulated settlements still emit real outbound webhooks to your endpoint. See [Webhooks](/guides/webhooks).
+Copy `secret` once, then `POST /webhooks/{webhookEndpointId}/test` to queue a `webhook.test` ping for **that endpoint** (`{webhookEndpointId}` is the RemitFlex webhook endpoint UUID from `POST /webhooks`; the test bypasses the event allowlist). Simulated settlements still emit real outbound webhooks to your endpoint. See [Webhooks](/guides/webhooks).
 
 If you register with a narrow `events` allowlist, money events still require those types to be listed — only the dedicated test ping is exempt.
 

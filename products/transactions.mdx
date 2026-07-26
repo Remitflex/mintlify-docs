@@ -33,7 +33,7 @@ curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
 
 ## Refreshing status
 
-- Payment routes: `POST /v1/payment-routes/{id}/deposits/sync`
-- Payment links: `POST /v1/collections/{id}/sync`
+- Payment routes: `POST /v1/payment-routes/{paymentRouteId}/deposits/sync`
+- Payment links: `POST /v1/collections/{collectionId}/sync`
 - Local fiat: `GET /v1/offramps/:orderId`, `GET /v1/onramps/:orderId?poll=true`
-- cNGN: `GET /v1/cngn/converts/:id`, `/withdrawals/:id`, `/payouts/:id`, `/payins/:id`, `/deposits/:id`
+- cNGN: `GET /v1/cngn/converts/{convertId}`, `/withdrawals/{withdrawalId}`, `/payouts/{payoutId}`, `/payins/{payinId}`, `/deposits/{depositId}`

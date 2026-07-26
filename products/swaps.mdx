@@ -73,7 +73,7 @@ curl -X POST https://api.remitflex.io/v1/swaps \
 | `refundTo` | Solana address for refunds (**required**) |
 | `customerId` | Optional. Defaults to your org's primary customer |
 
-Send the `from` token to `depositAddress` before `expiresAt`. Track with `GET /v1/swaps/{id}` (syncs status on read).
+Send the `from` token to `depositAddress` before `expiresAt`. Track with `GET /v1/swaps/{swapId}` (`{swapId}` is the RemitFlex swap UUID from `POST /swaps`; syncs status on read).
 
 ## List swaps by customer
 
@@ -86,11 +86,11 @@ curl "https://api.remitflex.io/v1/swaps?customerId=CUSTOMER_UUID" \
 
 ```bash
 # Status
-curl https://api.remitflex.io/v1/swaps/{id} \
+curl https://api.remitflex.io/v1/swaps/{swapId} \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 
 # Cancel (only while awaiting_deposit)
-curl -X POST https://api.remitflex.io/v1/swaps/{id}/cancel \
+curl -X POST https://api.remitflex.io/v1/swaps/{swapId}/cancel \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)"
 ```
@@ -106,6 +106,6 @@ The same fields appear on swap rows in [`GET /transactions`](/api-reference/list
 <CardGroup cols={2}>
   <Card title="Create swap" icon="plus" href="/api-reference/create-swap">`POST /swaps`</Card>
   <Card title="List swaps" icon="list" href="/api-reference/list-swaps">`GET /swaps`</Card>
-  <Card title="Get swap" icon="eye" href="/api-reference/get-swap">`GET /swaps/{id}`</Card>
+  <Card title="Get swap" icon="eye" href="/api-reference/get-swap">`GET /swaps/{swapId}`</Card>
   <Card title="Rates" icon="chart-line" href="/products/rates">Check FX before creating</Card>
 </CardGroup>

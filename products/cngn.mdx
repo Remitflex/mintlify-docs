@@ -21,8 +21,10 @@ These are **not** the same as:
 
 ## Enable cNGN
 
+Replace `{customerId}` with the RemitFlex customer UUID from `POST` or `GET /customers` (not a wallet address or StRails id).
+
 ```bash
-curl -X POST https://api.remitflex.io/v1/cngn/customers/{id}/enable \
+curl -X POST https://api.remitflex.io/v1/cngn/customers/{customerId}/enable \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
@@ -41,14 +43,14 @@ curl -X POST https://api.remitflex.io/v1/cngn/customers/{id}/enable \
 
 Enablement is **asynchronous**. When KYC finishes, RemitFlex emits `cngn.customer.enabled` (or `cngn.customer.failed`). The customer object includes `cngn: { enabled, status, evmWallet, virtualAccount, syncedAt }` — `null` when cNGN has never been started.
 
-Reload the customer with `GET /v1/customers/{id}`, or subscribe to webhooks.
+Reload the customer with `GET /v1/customers/{customerId}`, or subscribe to webhooks.
 
 Once enabled:
 
 | Need | Endpoint |
 |------|----------|
-| Live wallet balances + cached wallet list | `GET /v1/cngn/customers/{id}/wallets` |
-| Cached deposit/payout history | `GET /v1/cngn/customers/{id}/history` |
+| Live wallet balances + cached wallet list | `GET /v1/cngn/customers/{customerId}/wallets` |
+| Cached deposit/payout history | `GET /v1/cngn/customers/{customerId}/history` |
 
 **Required scopes:** `transfers:read`, `transfers:write`
 
@@ -87,10 +89,10 @@ curl -X POST https://api.remitflex.io/v1/cngn/payins \
 | `autoSwap` | Optional — convert cNGN → `assetSwap` before sweep |
 | `assetSwap` | `USDC` or `USDT` (required when `autoSwap` is true) |
 
-If auto-sweep stalls, funds can remain on the temporary wallet. Check `GET /v1/cngn/payins/{id}` → `sweep`, then:
+If auto-sweep stalls, funds can remain on the temporary wallet. Check `GET /v1/cngn/payins/{payinId}` → `sweep` (`{payinId}` is the RemitFlex payin UUID from `POST /cngn/payins`), then:
 
 ```bash
-curl -X POST https://api.remitflex.io/v1/cngn/payins/{id}/consolidate \
+curl -X POST https://api.remitflex.io/v1/cngn/payins/{payinId}/consolidate \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
@@ -128,7 +130,7 @@ curl -X POST https://api.remitflex.io/v1/cngn/converts \
 | `smartWalletAddress` | Optional; defaults to customer's Smart Wallet |
 | `destinationAddress` | Optional destination for output tokens |
 
-List: `GET /v1/cngn/converts`. Get: `GET /v1/cngn/converts/{id}`.
+List: `GET /v1/cngn/converts`. Get: `GET /v1/cngn/converts/{convertId}` (`{convertId}` is the RemitFlex convert UUID).
 
 ## Withdrawal
 
@@ -194,7 +196,7 @@ Money events are **stored locally**. On create/update RemitFlex:
 
 Customer enablement emits `cngn.customer.enabled` / `cngn.customer.failed` when BVN KYC finishes.
 
-Open payins / converts / payouts / withdrawals also refresh on read (`GET .../:id`) and via background sync.
+Open payins / converts / payouts / withdrawals also refresh on read (`GET /v1/cngn/payins/{payinId}`, `/converts/{convertId}`, `/payouts/{payoutId}`, `/withdrawals/{withdrawalId}`, `/deposits/{depositId}`) and via background sync.
 
 All of the above appear in [Transactions](/products/transactions) (`cngn_deposit`, `cngn_payin`, `cngn_convert`, `cngn_withdrawal`, `cngn_payout`).
 
@@ -202,5 +204,5 @@ All of the above appear in [Transactions](/products/transactions) (`cngn_deposit
 
 | Need | Use |
 |------|-----|
-| Live wallet balances | `GET /v1/cngn/customers/{id}/wallets` (or dashboard **Refresh**). Primary balances are live; the wallet list is a retained cache — RemitFlex does not drop addresses just because StRails stopped listing them. |
+| Live wallet balances | `GET /v1/cngn/customers/{customerId}/wallets` (or dashboard **Refresh**). Primary balances are live; the wallet list is a retained cache — RemitFlex does not drop addresses just because StRails stopped listing them. |
 | Money history (source of truth) | `GET /v1/transactions` and `/v1/cngn/*` list endpoints |

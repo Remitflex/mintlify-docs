@@ -596,7 +596,7 @@ components:
 
     UpdateCollectionRequest:
       type: object
-      description: Partial update. Set status to cancelled to void an open link. Logo uses POST /collections/{id}/logo (multipart).
+      description: Partial update. Set status to cancelled to void an open link. Logo uses POST /collections/{collectionId}/logo (multipart).
       properties:
         label:
           type: string
@@ -2753,7 +2753,7 @@ paths:
         "200":
           $ref: "#/components/responses/ListDeposits"
 
-  /payment-routes/{id}:
+  /payment-routes/{paymentRouteId}:
     get:
       operationId: getPaymentRoute
       summary: Get payment route
@@ -2762,9 +2762,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: paymentRouteId
           in: path
           required: true
+          description: RemitFlex payment route UUID (`id` from `POST /payment-routes` or `GET /payment-routes`).
           schema:
             type: string
             format: uuid
@@ -2788,9 +2789,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: paymentRouteId
           in: path
           required: true
+          description: RemitFlex payment route UUID (`id` from `POST /payment-routes` or `GET /payment-routes`).
           schema:
             type: string
             format: uuid
@@ -2799,7 +2801,7 @@ paths:
         "200":
           $ref: "#/components/responses/PaymentRoute"
 
-  /payment-routes/{id}/deposits:
+  /payment-routes/{paymentRouteId}/deposits:
     get:
       operationId: listPaymentRouteDeposits
       summary: List route deposits
@@ -2808,9 +2810,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: paymentRouteId
           in: path
           required: true
+          description: RemitFlex payment route UUID (`id` from `POST /payment-routes` or `GET /payment-routes`).
           schema:
             type: string
             format: uuid
@@ -2818,7 +2821,7 @@ paths:
         "200":
           $ref: "#/components/responses/ListDeposits"
 
-  /payment-routes/{id}/deposits/sync:
+  /payment-routes/{paymentRouteId}/deposits/sync:
     post:
       operationId: syncPaymentRouteDeposits
       summary: Sync route deposits
@@ -2827,9 +2830,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: paymentRouteId
           in: path
           required: true
+          description: RemitFlex payment route UUID (`id` from `POST /payment-routes` or `GET /payment-routes`).
           schema:
             type: string
             format: uuid
@@ -2897,7 +2901,7 @@ paths:
         "201":
           $ref: "#/components/responses/Collection"
 
-  /collections/{id}:
+  /collections/{collectionId}:
     get:
       operationId: getCollection
       summary: Get payment link
@@ -2906,9 +2910,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -2919,14 +2924,15 @@ paths:
     patch:
       operationId: updateCollection
       summary: Update payment link
-      description: "Update metadata, embed theme, or cancel (status cancelled). Logo is uploaded separately via POST /collections/{id}/logo. Requires collections:write."
+      description: "Update metadata, embed theme, or cancel (status cancelled). Logo is uploaded separately via POST /collections/{collectionId}/logo. Requires collections:write."
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -2940,7 +2946,7 @@ paths:
         "200":
           $ref: "#/components/responses/Collection"
 
-  /collections/{id}/sync:
+  /collections/{collectionId}/sync:
     post:
       operationId: syncCollection
       summary: Sync payment link status
@@ -2948,9 +2954,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -2959,18 +2966,19 @@ paths:
         "200":
           $ref: "#/components/responses/CollectionSync"
 
-  /collections/{id}/cancel:
+  /collections/{collectionId}/cancel:
     post:
       operationId: cancelCollection
       summary: Cancel payment link
-      description: 'Legacy alias. Prefer PATCH /collections/{id} with `{ "status": "cancelled" }`.'
+      description: 'Legacy alias. Prefer PATCH /collections/{collectionId} with `{ "status": "cancelled" }`.'
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -2979,7 +2987,7 @@ paths:
         "200":
           $ref: "#/components/responses/Collection"
 
-  /collections/{id}/logo:
+  /collections/{collectionId}/logo:
     post:
       operationId: uploadCollectionLogo
       summary: Upload payment link logo
@@ -2988,9 +2996,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3009,18 +3018,19 @@ paths:
         "200":
           $ref: "#/components/responses/LogoUpload"
 
-  /collections/{id}/embed-config:
+  /collections/{collectionId}/embed-config:
     patch:
       operationId: updateCollectionEmbedConfig
       summary: Update embed widget theme
-      description: 'Legacy alias. Prefer PATCH /collections/{id} with `{ "embedConfig": { ... } }`.'
+      description: 'Legacy alias. Prefer PATCH /collections/{collectionId} with `{ "embedConfig": { ... } }`.'
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3034,7 +3044,7 @@ paths:
         "200":
           $ref: "#/components/responses/Collection"
 
-  /pay/{id}/embed-config:
+  /pay/{collectionId}/embed-config:
     get:
       operationId: getPayEmbedConfig
       summary: Public embed theme for a payment link
@@ -3042,9 +3052,10 @@ paths:
       tags: [Payment links]
       security: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3052,7 +3063,7 @@ paths:
         "200":
           $ref: "#/components/responses/PayEmbedConfig"
 
-  /pay/{id}:
+  /pay/{collectionId}:
     get:
       operationId: getPayPage
       summary: Public pay page data
@@ -3060,9 +3071,10 @@ paths:
       tags: [Payment links]
       security: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3070,7 +3082,7 @@ paths:
         "200":
           $ref: "#/components/responses/PayPage"
 
-  /pay/{id}/logo:
+  /pay/{collectionId}/logo:
     get:
       operationId: getPayLogo
       summary: Public payment link logo
@@ -3078,9 +3090,10 @@ paths:
       tags: [Payment links]
       security: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3093,7 +3106,7 @@ paths:
                 type: string
                 format: binary
 
-  /pay/{id}/quote:
+  /pay/{collectionId}/quote:
     post:
       operationId: quotePayPage
       summary: Quote pay page payment
@@ -3101,9 +3114,10 @@ paths:
       tags: [Payment links]
       security: []
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
+          description: RemitFlex payment link (collection) UUID — parent link or checkout session `id` from create/list/get.
           schema:
             type: string
             format: uuid
@@ -3171,6 +3185,7 @@ paths:
         - name: orderId
           in: path
           required: true
+          description: RemitFlex local fiat order UUID (`orderId` / `id` from create or list offramps/onramps).
           schema:
             type: string
       responses:
@@ -3186,6 +3201,7 @@ paths:
         - name: orderId
           in: path
           required: true
+          description: RemitFlex local fiat order UUID (`orderId` / `id` from create or list offramps/onramps).
           schema:
             type: string
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -3204,6 +3220,7 @@ paths:
         - name: orderId
           in: path
           required: true
+          description: RemitFlex local fiat order UUID (`orderId` / `id` from create or list offramps/onramps).
           schema:
             type: string
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -3278,6 +3295,7 @@ paths:
         - name: orderId
           in: path
           required: true
+          description: RemitFlex local fiat order UUID (`orderId` / `id` from create or list offramps/onramps).
           schema:
             type: string
         - name: poll
@@ -3582,7 +3600,7 @@ paths:
                     status: error
                     message: Unsupported currency pair
 
-  /swaps/{id}:
+  /swaps/{swapId}:
     get:
       operationId: getSwap
       summary: Get swap
@@ -3591,9 +3609,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: swapId
           in: path
           required: true
+          description: RemitFlex swap UUID (`id` from `POST /swaps` or `GET /swaps`).
           schema:
             type: string
             format: uuid
@@ -3617,7 +3636,7 @@ paths:
                     status: error
                     message: Swap not found
 
-  /swaps/{id}/cancel:
+  /swaps/{swapId}/cancel:
     post:
       operationId: cancelSwap
       summary: Cancel swap
@@ -3626,9 +3645,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: swapId
           in: path
           required: true
+          description: RemitFlex swap UUID (`id` from `POST /swaps` or `GET /swaps`).
           schema:
             type: string
             format: uuid
@@ -3651,22 +3671,23 @@ paths:
                     status: error
                     message: Swap cannot be cancelled in current status
 
-  /cngn/customers/{id}/enable:
+  /cngn/customers/{customerId}/enable:
     post:
       operationId: enableCngnCustomer
       summary: Enable cNGN (BVN)
       description: |
         Starts KYC enablement for the customer. Requires `transfers:write` and `Idempotency-Key`.
         Completion is asynchronous: RemitFlex emits `cngn.customer.enabled` or `cngn.customer.failed`
-        when ready. Reload the customer with `GET /customers/{id}`, or subscribe to webhooks.
+        when ready. Reload the customer with `GET /customers/{customerId}`, or subscribe to webhooks.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
-        - name: id
+        - name: customerId
           in: path
           required: true
+          description: RemitFlex customer UUID (`id` from `POST /customers` or `GET /customers`). Not a wallet address or provider user id.
           schema:
             type: string
             format: uuid
@@ -3723,7 +3744,7 @@ paths:
                             type: string
                             nullable: true
 
-  /cngn/customers/{id}/wallets:
+  /cngn/customers/{customerId}/wallets:
     get:
       operationId: getCngnCustomerWallets
       summary: Get cNGN wallets
@@ -3734,9 +3755,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: customerId
           in: path
           required: true
+          description: RemitFlex customer UUID (`id` from `POST /customers` or `GET /customers`). Not a wallet address or provider user id.
           schema:
             type: string
             format: uuid
@@ -3776,7 +3798,7 @@ paths:
                       note:
                         type: string
 
-  /cngn/customers/{id}/history:
+  /cngn/customers/{customerId}/history:
     get:
       operationId: getCngnCustomerHistory
       summary: Get cNGN history
@@ -3787,9 +3809,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: customerId
           in: path
           required: true
+          description: RemitFlex customer UUID (`id` from `POST /customers` or `GET /customers`). Not a wallet address or provider user id.
           schema:
             type: string
             format: uuid
@@ -3887,7 +3910,7 @@ paths:
         "422":
           description: Customer does not have cNGN enabled
 
-  /cngn/converts/{id}:
+  /cngn/converts/{convertId}:
     get:
       operationId: getRailsSwap
       summary: Get cNGN swap
@@ -3896,9 +3919,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: convertId
           in: path
           required: true
+          description: RemitFlex cNGN convert UUID (`id` from `POST /cngn/converts` or list).
           schema:
             type: string
             format: uuid
@@ -3971,7 +3995,7 @@ paths:
         "201":
           description: Rails withdrawal created
 
-  /cngn/withdrawals/{id}:
+  /cngn/withdrawals/{withdrawalId}:
     get:
       operationId: getRailsWithdrawal
       summary: Get cNGN withdrawal
@@ -3979,9 +4003,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: withdrawalId
           in: path
           required: true
+          description: RemitFlex cNGN withdrawal UUID (`id` from `POST /cngn/withdrawals` or list).
           schema:
             type: string
             format: uuid
@@ -4108,7 +4133,7 @@ paths:
         "201":
           description: Rails offramp created
 
-  /cngn/payouts/{id}:
+  /cngn/payouts/{payoutId}:
     get:
       operationId: getRailsOfframp
       summary: Get cNGN user offramp
@@ -4117,9 +4142,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: payoutId
           in: path
           required: true
+          description: RemitFlex cNGN payout UUID (`id` from `POST /cngn/payouts` or list).
           schema:
             type: string
             format: uuid
@@ -4192,7 +4218,7 @@ paths:
         "201":
           description: Rails onramp created
 
-  /cngn/payins/{id}:
+  /cngn/payins/{payinId}:
     get:
       operationId: getRailsOnramp
       summary: Get cNGN temporary VA onramp
@@ -4201,9 +4227,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: payinId
           in: path
           required: true
+          description: RemitFlex cNGN payin UUID (`id` from `POST /cngn/payins` or list).
           schema:
             type: string
             format: uuid
@@ -4218,7 +4245,7 @@ paths:
         "404":
           description: Not found
 
-  /cngn/payins/{id}/consolidate:
+  /cngn/payins/{payinId}/consolidate:
     post:
       operationId: consolidateRailsOnramp
       summary: Force-move temp VA funds to main Smart Wallet
@@ -4235,9 +4262,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: payinId
           in: path
           required: true
+          description: RemitFlex cNGN payin UUID (`id` from `POST /cngn/payins` or list).
           schema:
             type: string
             format: uuid
@@ -4261,7 +4289,7 @@ paths:
         "200":
           description: cNGN deposits
 
-  /cngn/deposits/{id}:
+  /cngn/deposits/{depositId}:
     get:
       operationId: getCngnDeposit
       summary: Get a cNGN deposit
@@ -4270,9 +4298,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: depositId
           in: path
           required: true
+          description: RemitFlex cNGN deposit UUID (`id` from deposit create/list).
           schema:
             type: string
             format: uuid
@@ -4345,7 +4374,7 @@ paths:
         "201":
           description: Endpoint created (includes secret once)
 
-  /webhooks/{id}:
+  /webhooks/{webhookEndpointId}:
     get:
       operationId: getWebhookEndpoint
       summary: Get webhook endpoint
@@ -4353,9 +4382,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4372,9 +4402,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4412,9 +4443,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4425,7 +4457,7 @@ paths:
         "404":
           description: Not found
 
-  /webhooks/{id}/rotate-secret:
+  /webhooks/{webhookEndpointId}/rotate-secret:
     post:
       operationId: rotateWebhookSecret
       summary: Rotate webhook signing secret
@@ -4434,9 +4466,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4447,7 +4480,7 @@ paths:
         "404":
           description: Not found
 
-  /webhooks/{id}/deliveries:
+  /webhooks/{webhookEndpointId}/deliveries:
     get:
       operationId: listWebhookDeliveries
       summary: List recent deliveries for an endpoint
@@ -4455,9 +4488,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4474,7 +4508,7 @@ paths:
         "404":
           description: Not found
 
-  /webhooks/{id}/test:
+  /webhooks/{webhookEndpointId}/test:
     post:
       operationId: testWebhookEndpoint
       summary: Queue a test ping event
@@ -4486,9 +4520,10 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
+        - name: webhookEndpointId
           in: path
           required: true
+          description: RemitFlex webhook endpoint UUID (`id` from `POST /webhooks` or `GET /webhooks`).
           schema:
             type: string
             format: uuid
@@ -4545,7 +4580,7 @@ paths:
         "401":
           description: Unauthorized
 
-  /notifications/{id}/read:
+  /notifications/{notificationId}/read:
     post:
       operationId: markNotificationRead
       summary: Mark a notification read
@@ -4553,9 +4588,10 @@ paths:
       tags: [Notifications]
       security: []
       parameters:
-        - name: id
+        - name: notificationId
           in: path
           required: true
+          description: RemitFlex in-app notification UUID (`id` from `GET /notifications`).
           schema:
             type: string
       responses:

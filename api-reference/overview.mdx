@@ -96,12 +96,29 @@ When exceeded, the API returns `429 Too Many Requests`.
 }
 ```
 
+## Path IDs
+
+Path placeholders are **named** RemitFlex UUIDs — not provider ids, wallet addresses, or bank account numbers.
+
+| Placeholder | Means |
+|-------------|--------|
+| `{customerId}` | Customer `id` from `POST` / `GET /customers` |
+| `{paymentRouteId}` | Payment route `id` from `POST` / `GET /payment-routes` |
+| `{collectionId}` | Payment link (collection) `id` — parent or checkout session |
+| `{swapId}` | Swap `id` from `POST` / `GET /swaps` |
+| `{convertId}` / `{withdrawalId}` / `{payoutId}` / `{payinId}` / `{depositId}` | cNGN object `id` from the matching create/list endpoint |
+| `{orderId}` | Local fiat offramp/onramp order id |
+| `{webhookEndpointId}` | Webhook endpoint `id` from `POST` / `GET /webhooks` |
+| `{notificationId}` | In-app notification `id` from `GET /notifications` |
+
+OpenAPI path parameters use the same names and describe which resource each refers to.
+
 ## Available resources
 
 | Resource | Description |
 |----------|-------------|
 | Payment routes | Cross-chain collection — `GET/POST /payment-routes` |
-| Payment links | Shareable pay URLs and hosted pay page — `GET/POST /collections`, public `GET/POST /pay/{id}` |
+| Payment links | Shareable pay URLs and hosted pay page — `GET/POST /collections`, public `GET/POST /pay/{collectionId}` (invoice id, checkout parent id, or session id) |
 | Swaps | Solana EURC↔USDC — `GET/POST /swaps` |
 | Swap rates | Indicative Solana quotes — `GET /rates` |
 | Offramps | Stablecoin → local fiat bank payout — `GET/POST /offramps` |

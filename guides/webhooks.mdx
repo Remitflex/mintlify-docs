@@ -67,22 +67,24 @@ Compare `v1` from the header to `expected` (constant-time). Reject if the timest
 | Collections | `collection.created`, `collection.updated` |
 | Local fiat | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |
 | cNGN | `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`, `cngn.payin.*`, `cngn.deposit.*` (`.created` / `.updated`); `cngn.customer.enabled`, `cngn.customer.failed` |
-| Test | `webhook.test` (from `POST /v1/webhooks/:id/test` — delivered to that endpoint even if it is not on the allowlist) |
+| Test | `webhook.test` (from `POST /v1/webhooks/{webhookEndpointId}/test` — delivered to that endpoint even if it is not on the allowlist) |
 
 Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states. `cngn.customer.enabled` / `.failed` fire once when KYC finishes.
 
 ## API
 
+`{webhookEndpointId}` is the RemitFlex webhook endpoint UUID from `POST` or `GET /webhooks`.
+
 | Method | Path | Scope |
 |--------|------|-------|
 | `POST` | `/v1/webhooks` | `webhooks:write` |
 | `GET` | `/v1/webhooks` | `webhooks:read` |
-| `GET` | `/v1/webhooks/:id` | `webhooks:read` |
-| `PATCH` | `/v1/webhooks/:id` | `webhooks:write` |
-| `POST` | `/v1/webhooks/:id/rotate-secret` | `webhooks:write` |
-| `DELETE` | `/v1/webhooks/:id` | `webhooks:write` (soft revoke) |
-| `GET` | `/v1/webhooks/:id/deliveries` | `webhooks:read` |
-| `POST` | `/v1/webhooks/:id/test` | `webhooks:write` |
+| `GET` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:read` |
+| `PATCH` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:write` |
+| `POST` | `/v1/webhooks/{webhookEndpointId}/rotate-secret` | `webhooks:write` |
+| `DELETE` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:write` (soft revoke) |
+| `GET` | `/v1/webhooks/{webhookEndpointId}/deliveries` | `webhooks:read` |
+| `POST` | `/v1/webhooks/{webhookEndpointId}/test` | `webhooks:write` |
 | `GET` | `/v1/webhooks/event-types` | `webhooks:read` |
 
 Dashboard JWT sessions can call these routes without scopes. API keys need the matching `webhooks:*` scope.

@@ -18,15 +18,17 @@ Discover supported networks in [Networks & corridors](/concepts/networks-and-cor
 
 ## Endpoints
 
+`{paymentRouteId}` is the RemitFlex payment route UUID returned by `POST` or `GET /payment-routes`.
+
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/payment-routes` | Create route |
 | `GET` | `/payment-routes` | List routes |
-| `GET` | `/payment-routes/{id}` | Get route |
+| `GET` | `/payment-routes/{paymentRouteId}` | Get route |
 | `GET` | `/payment-routes/deposits` | All deposits |
-| `GET` | `/payment-routes/{id}/deposits` | Route deposits |
-| `POST` | `/payment-routes/{id}/deposits/sync` | Refresh deposit state |
-| `DELETE` | `/payment-routes/{id}` | Archive route |
+| `GET` | `/payment-routes/{paymentRouteId}/deposits` | Route deposits |
+| `POST` | `/payment-routes/{paymentRouteId}/deposits/sync` | Refresh deposit state |
+| `DELETE` | `/payment-routes/{paymentRouteId}` | Archive route |
 
 ## Create
 
