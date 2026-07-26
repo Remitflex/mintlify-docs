@@ -39,9 +39,9 @@ curl -X POST https://api.remitflex.io/v1/cngn/customers/{id}/enable \
 | `email` | Optional — defaults to the customer's email |
 | `phoneNumber` | Optional |
 
-Enablement is **asynchronous**. RemitFlex polls until KYC completes, then emits `cngn.customer.enabled` (or `cngn.customer.failed`). The customer object includes `cngn: { enabled, status, evmWallet, virtualAccount, syncedAt }` — `null` when cNGN has never been started.
+Enablement is **asynchronous**. When KYC finishes, RemitFlex emits `cngn.customer.enabled` (or `cngn.customer.failed`). The customer object includes `cngn: { enabled, status, evmWallet, virtualAccount, syncedAt }` — `null` when cNGN has never been started.
 
-Reload the customer with `GET /v1/customers/{id}`, or subscribe to webhooks. Do **not** poll a provider status endpoint.
+Reload the customer with `GET /v1/customers/{id}`, or subscribe to webhooks.
 
 Once enabled:
 
@@ -202,7 +202,5 @@ All of the above appear in [Transactions](/products/transactions) (`cngn_deposit
 
 | Need | Use |
 |------|-----|
-| Live wallet balances | `GET /v1/cngn/customers/{id}/wallets` (or dashboard **Refresh**) |
+| Live wallet balances | `GET /v1/cngn/customers/{id}/wallets` (or dashboard **Refresh**). Primary balances are live; the wallet list is a retained cache — RemitFlex does not drop addresses just because StRails stopped listing them. |
 | Money history (source of truth) | `GET /v1/transactions` and `/v1/cngn/*` list endpoints |
-
-Do not treat provider ledger passthrough as the merchant ledger — RemitFlex transactions are local.
