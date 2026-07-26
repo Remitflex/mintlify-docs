@@ -1342,7 +1342,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, paused, archived]
+          enum: [active, archived]
         customerId:
           type: string
         customerName:
@@ -1405,6 +1405,40 @@ components:
           type: string
         isPrimary:
           type: boolean
+        cngn:
+          type: object
+          nullable: true
+          description: >
+            Present when cNGN enablement has been started or completed.
+            `null` when the customer has never enabled cNGN.
+          properties:
+            enabled:
+              type: boolean
+            status:
+              type: string
+              nullable: true
+            evmWallet:
+              type: string
+              nullable: true
+            virtualAccount:
+              type: object
+              nullable: true
+              properties:
+                accountNumber:
+                  type: string
+                accountName:
+                  type: string
+                  nullable: true
+                bankName:
+                  type: string
+                  nullable: true
+                bankCode:
+                  type: string
+                  nullable: true
+            syncedAt:
+              type: string
+              format: date-time
+              nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2551,185 +2585,6 @@ paths:
         "201":
           $ref: "#/components/responses/Customer"
 
-  /customers/{id}/strails/onboard:
-    post:
-      operationId: onboardCustomerCngn
-      summary: Enable cNGN (BVN onboard)
-      description: |
-        Starts KYC onboard for the customer. Requires `transfers:write` and `Idempotency-Key`.
-        Poll `POST /customers/{id}/strails/onboard-status` until `strails.userId` is set.
-      tags: [Customers]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [bvn]
-              properties:
-                bvn:
-                  type: string
-                  pattern: '^\d{11}$'
-                  description: Nigerian BVN (11 digits).
-                email:
-                  type: string
-                  format: email
-                  description: Optional. Defaults to the customer's email.
-                phoneNumber:
-                  type: string
-                  description: Optional phone number.
-            example:
-              bvn: "22222222222"
-              email: "jane@example.com"
-      responses:
-        "200":
-          description: Onboarding started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      customer:
-                        type: object
-                      onboard:
-                        type: object
-                        properties:
-                          requestId:
-                            type: string
-                            nullable: true
-                          status:
-                            type: string
-                            nullable: true
-                          userId:
-                            type: string
-                            nullable: true
-                          message:
-                            type: string
-                            nullable: true
-                          estimatedCompletionTime:
-                            type: string
-                            nullable: true
-
-  /customers/{id}/strails/onboard-status:
-    post:
-      operationId: getCustomerCngnOnboardStatus
-      summary: Poll cNGN onboard status
-      description: |
-        Checks KYC onboard progress. When a user id is available, links the customer and syncs wallet/VA.
-        Requires `transfers:write` and `Idempotency-Key`.
-      tags: [Customers]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                requestId:
-                  type: string
-                  description: Optional. Defaults to the stored pending request id.
-            example: {}
-      responses:
-        "200":
-          description: Onboarding status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      customer:
-                        type: object
-                      onboard:
-                        type: object
-
-  /customers/{id}/strails/link:
-    post:
-      operationId: linkCustomerCngn
-      summary: Link existing cNGN user id
-      description: Attach an existing wallet user id to the customer and sync. Requires `transfers:write`.
-      tags: [Customers]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [strailsUserId]
-              properties:
-                strailsUserId:
-                  type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/Customer"
-
-  /customers/{id}/strails/sync:
-    post:
-      operationId: syncCustomerCngn
-      summary: Sync cNGN profile
-      description: >
-        Refresh virtual account, wallet list, and ledger from StRails into the local database.
-        Dashboard history and wallet metadata read from this cache. Requires `transfers:write`.
-      tags: [Customers]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          $ref: "#/components/responses/Customer"
-
   /org/settings:
     get:
       operationId: getOrgSettings
@@ -2982,26 +2837,6 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/SyncDeposits"
-
-  /payment-routes/{id}/pause:
-    post:
-      operationId: pausePaymentRoute
-      summary: Pause payment route
-      description: Requires `collections:write` scope and `Idempotency-Key`.
-      tags: [Payment routes]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "200":
-          $ref: "#/components/responses/PaymentRoute"
 
   /collections/chains:
     get:
@@ -3295,26 +3130,6 @@ paths:
       responses:
         "201":
           $ref: "#/components/responses/PublishableKey"
-
-  /payment-routes/{id}/activate:
-    post:
-      operationId: activatePaymentRoute
-      summary: Activate payment route
-      description: Requires `collections:write` scope and `Idempotency-Key`.
-      tags: [Payment routes]
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - $ref: "#/components/parameters/IdempotencyKey"
-      responses:
-        "200":
-          $ref: "#/components/responses/PaymentRoute"
 
   /offramps:
     get:
@@ -3836,6 +3651,182 @@ paths:
                     status: error
                     message: Swap cannot be cancelled in current status
 
+  /cngn/customers/{id}/enable:
+    post:
+      operationId: enableCngnCustomer
+      summary: Enable cNGN (BVN)
+      description: |
+        Starts KYC enablement for the customer. Requires `transfers:write` and `Idempotency-Key`.
+        Completion is asynchronous: RemitFlex polls until ready and emits `cngn.customer.enabled`
+        or `cngn.customer.failed`. Reload the customer with `GET /customers/{id}` — do not poll a
+        provider status endpoint.
+      tags: [cNGN]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bvn]
+              properties:
+                bvn:
+                  type: string
+                  pattern: '^\d{11}$'
+                  description: Nigerian BVN (11 digits).
+                email:
+                  type: string
+                  format: email
+                  description: Optional. Defaults to the customer's email.
+                phoneNumber:
+                  type: string
+                  description: Optional phone number.
+            example:
+              bvn: "22222222222"
+              email: "jane@example.com"
+      responses:
+        "200":
+          description: Enablement started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customer:
+                        $ref: "#/components/schemas/Customer"
+                      enablement:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            nullable: true
+                          message:
+                            type: string
+                            nullable: true
+                          estimatedCompletionTime:
+                            type: string
+                            nullable: true
+
+  /cngn/customers/{id}/wallets:
+    get:
+      operationId: getCngnCustomerWallets
+      summary: Get cNGN wallets
+      description: |
+        Cached wallet list plus **live** Smart Wallet token balances.
+        Customer must have cNGN enabled. Requires `transfers:read`.
+      tags: [cNGN]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Wallets fetched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customerId:
+                        type: string
+                        format: uuid
+                      wallets:
+                        type: array
+                        items:
+                          type: object
+                      count:
+                        type: integer
+                      primary:
+                        type: object
+                        nullable: true
+                      source:
+                        type: string
+                        example: database
+                      balancesLive:
+                        type: boolean
+                      note:
+                        type: string
+
+  /cngn/customers/{id}/history:
+    get:
+      operationId: getCngnCustomerHistory
+      summary: Get cNGN history
+      description: |
+        Cached deposit/payout history for the customer's cNGN wallet.
+        Customer must have cNGN enabled. Requires `transfers:read`.
+      tags: [cNGN]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: History fetched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customerId:
+                        type: string
+                        format: uuid
+                      transactions:
+                        type: array
+                        items:
+                          type: object
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      source:
+                        type: string
+                        example: database
+
   /cngn/converts:
     get:
       operationId: listRailsSwaps
@@ -3866,11 +3857,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [sellToken, buyToken, amount]
+              required: [customerId, sellToken, buyToken, amount]
               properties:
                 customerId:
                   type: string
                   format: uuid
+                  description: cNGN-enabled customer under your org (required).
                 sellToken:
                   type: string
                   enum: [CNGN, USDC, USDT]
@@ -3886,6 +3878,7 @@ paths:
                 destinationAddress:
                   type: string
             example:
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
               sellToken: CNGN
               buyToken: USDC
               amount: 5000
@@ -3949,11 +3942,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [internalWallet, destinationWallet, amount]
+              required: [customerId, internalWallet, destinationWallet, amount]
               properties:
                 customerId:
                   type: string
                   format: uuid
+                  description: cNGN-enabled customer under your org (required).
                 internalWallet:
                   type: string
                 destinationWallet:
@@ -3968,6 +3962,7 @@ paths:
                   type: string
                   description: Bridge network (default Base)
             example:
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
               internalWallet: "0xSmartWallet"
               destinationWallet: "0xExternal"
               amount: 100
@@ -4087,11 +4082,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amount, accountNumber, bankCode]
+              required: [customerId, amount, accountNumber, bankCode]
               properties:
                 customerId:
                   type: string
                   format: uuid
+                  description: cNGN-enabled customer under your org (required).
                 amount:
                   type: number
                   description: Amount in Naira
@@ -4104,6 +4100,7 @@ paths:
                   enum: [CNGN, USDC, USDT]
                   default: CNGN
             example:
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
               amount: 5000
               accountNumber: "0123456789"
               bankCode: "058"
@@ -4165,11 +4162,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amount]
+              required: [customerId, amount]
               properties:
                 customerId:
                   type: string
                   format: uuid
+                  description: cNGN-enabled customer under your org (required).
                 amount:
                   type: number
                   exclusiveMinimum: 0
@@ -4187,6 +4185,7 @@ paths:
                 destinationAddress:
                   type: string
             example:
+              customerId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
               amount: 5000
               sweepToOfframp: true
               autoSwap: false
@@ -4499,3 +4498,132 @@ paths:
           description: Endpoint disabled
         "404":
           description: Not found
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: List in-app notifications
+      description: |
+        Dashboard JWT only. Returns recent org notifications and an unread count.
+        Created alongside outbound webhook emits for key money events.
+      tags: [Notifications]
+      security: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+      responses:
+        "200":
+          description: Notifications list
+        "401":
+          description: Unauthorized
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      summary: Mark all notifications read
+      description: Dashboard JWT only.
+      tags: [Notifications]
+      security: []
+      responses:
+        "200":
+          description: All unread notifications marked read
+        "401":
+          description: Unauthorized
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      summary: Mark a notification read
+      description: Dashboard JWT only.
+      tags: [Notifications]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked read
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /sandbox/status:
+    get:
+      operationId: getSandboxStatus
+      summary: Sandbox simulator status
+      description: |
+        Test environment only (`rmf_test_` key). Returns whether in-process provider simulation is active and the auto-settle delay in milliseconds.
+      tags: [Sandbox]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Sandbox status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  simulationEnabled:
+                    type: boolean
+                    example: true
+                  autoSettleMs:
+                    type: integer
+                    example: 8000
+                  environment:
+                    type: string
+                    enum: [test, live]
+                    example: test
+        "403":
+          description: Live key or non-test environment
+
+  /sandbox/simulate:
+    post:
+      operationId: simulateSandboxProvider
+      summary: Force-complete a simulated provider request
+      description: |
+        Test environment only. Immediately completes a pending simulated Relay, PayCrest, or StRails request. Requires a write scope (`transfers:write`, `collections:write`, `offramps:write`, or `onramps:write`).
+      tags: [Sandbox]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, id]
+              properties:
+                provider:
+                  type: string
+                  enum: [relay, paycrest, strails]
+                id:
+                  type: string
+                  description: Simulated provider request or order id (e.g. `sim_relay_…`)
+                status:
+                  type: string
+                  description: Optional terminal status override (e.g. `failed`)
+      responses:
+        "200":
+          description: Simulation applied
+        "403":
+          description: Live key or non-test environment
+        "404":
+          description: Simulated request not found
+        "422":
+          description: Id does not match provider

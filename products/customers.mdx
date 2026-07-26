@@ -65,19 +65,19 @@ curl -X POST https://api.remitflex.io/v1/customers \
 
 ## Dashboard
 
-View and filter activity per customer at [dashboard.remitflex.io](https://dashboard.remitflex.io). On the customer **cNGN** tab you can **onboard with BVN** (or check pending status) to enable the Smart Wallet and NGN deposit account.
+View and filter activity per customer at [dashboard.remitflex.io](https://dashboard.remitflex.io). On the customer **cNGN** tab you can **enable with BVN** to create the Smart Wallet and NGN deposit account. Completion is webhook-first (`cngn.customer.enabled`).
 
 ## Enable cNGN
 
 ```bash
-curl -X POST https://api.remitflex.io/v1/customers/{id}/strails/onboard \
+curl -X POST https://api.remitflex.io/v1/cngn/customers/{id}/enable \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" \
   -H "Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{"bvn":"22222222222"}'
 ```
 
-See [cNGN](/products/cngn#enable-cngn-onboard) for status polling and fields.
+See [cNGN](/products/cngn#enable-cngn) for fields, wallets, and webhooks.
 
 ## API reference
 

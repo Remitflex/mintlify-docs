@@ -129,11 +129,7 @@
             "group": "Customers",
             "pages": [
               "GET /customers",
-              "POST /customers",
-              "POST /customers/{id}/strails/onboard",
-              "POST /customers/{id}/strails/onboard-status",
-              "POST /customers/{id}/strails/link",
-              "POST /customers/{id}/strails/sync"
+              "POST /customers"
             ]
           },
           {
@@ -155,8 +151,6 @@
               "GET /payment-routes/{id}",
               "GET /payment-routes/{id}/deposits",
               "POST /payment-routes/{id}/deposits/sync",
-              "POST /payment-routes/{id}/pause",
-              "POST /payment-routes/{id}/activate",
               "DELETE /payment-routes/{id}"
             ]
           },
@@ -230,6 +224,9 @@
           {
             "group": "cNGN",
             "pages": [
+              "POST /cngn/customers/{id}/enable",
+              "GET /cngn/customers/{id}/wallets",
+              "GET /cngn/customers/{id}/history",
               "GET /cngn/converts",
               "POST /cngn/converts",
               "GET /cngn/converts/{id}",
@@ -267,6 +264,14 @@
               "POST /webhooks/{id}/rotate-secret",
               "GET /webhooks/{id}/deliveries",
               "POST /webhooks/{id}/test"
+            ]
+          },
+          {
+            "group": "Notifications",
+            "pages": [
+              "GET /notifications",
+              "POST /notifications/{id}/read",
+              "POST /notifications/read-all"
             ]
           }
         ]

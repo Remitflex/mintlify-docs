@@ -26,8 +26,6 @@ Discover supported networks in [Networks & corridors](/concepts/networks-and-cor
 | `GET` | `/payment-routes/deposits` | All deposits |
 | `GET` | `/payment-routes/{id}/deposits` | Route deposits |
 | `POST` | `/payment-routes/{id}/deposits/sync` | Refresh deposit state |
-| `POST` | `/payment-routes/{id}/pause` | Pause route |
-| `POST` | `/payment-routes/{id}/activate` | Activate route |
 | `DELETE` | `/payment-routes/{id}` | Archive route |
 
 ## Create
@@ -60,4 +58,4 @@ Response includes `depositAddress` — share with payers on the origin network.
 
 ## Status
 
-`active` → `paused` → `archived`. Deposits appear in [Transactions](/products/transactions) as `kind: payment_route`.
+`active` → `archived` (via `DELETE`). Deposits appear in [Transactions](/products/transactions) as `kind: payment_route`.

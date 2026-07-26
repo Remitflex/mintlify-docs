@@ -94,7 +94,7 @@ Each key is issued with one or more scopes. Scopes are enforced on API-key reque
 | `transfers:read` | `GET /v1/transactions`, `/v1/customers`, `/v1/swaps`, `/v1/cngn/*` reads |
 | `transfers:write` | `POST /v1/customers`, `POST /v1/swaps`, `/v1/cngn/*` writes |
 | `collections:read` | `GET /v1/payment-routes`, `GET /v1/collections`, discovery `/chains` |
-| `collections:write` | `POST /v1/payment-routes`, `POST /v1/collections`, pause, activate, sync, cancel, logo upload |
+| `collections:write` | `POST /v1/payment-routes`, `POST /v1/collections`, sync, cancel, logo upload |
 | `offramps:read` | `GET /v1/offramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
 | `offramps:write` | `POST /v1/offramps`, `DELETE /v1/offramps/:orderId`, `PATCH .../external-transfer`, `POST /v1/fiat/verify-account` |
 | `onramps:read` | `GET /v1/onramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |

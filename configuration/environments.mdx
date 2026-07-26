@@ -1,13 +1,35 @@
 ---
 title: "Sandbox and live environments"
 sidebarTitle: "Environments"
-description: "Test and live API keys share one base URL — environment is determined by the key prefix."
+description: "Test and live API keys share one base URL — environment comes from the key prefix or dashboard header."
 ---
 
 ## Base URL
 
 ```
 https://api.remitflex.io/v1
+```
+
+Test and live traffic use the **same base URL**. There is no separate sandbox hostname.
+
+## How environment is chosen
+
+| Source | When it applies |
+|--------|-----------------|
+| API key prefix | `rmf_test_` → test; `rmf_live_` → live (always wins for API-key auth) |
+| Dashboard JWT | `X-Remitflex-Environment: test` or `live` (defaults to `live` if omitted) |
+
+```bash
+curl https://api.remitflex.io/v1/rates \
+  -H "Authorization: Bearer rmf_test_..."
+```
+
+Dashboard sessions can pin test mode without swapping keys:
+
+```bash
+curl https://api.remitflex.io/v1/collections \
+  -H "Authorization: Bearer <dashboard JWT>" \
+  -H "X-Remitflex-Environment: test"
 ```
 
 ## Key prefixes
@@ -19,10 +41,27 @@ https://api.remitflex.io/v1
 
 Create keys in the [dashboard](https://dashboard.remitflex.io) under **Settings → API Keys**.
 
-```bash
-curl https://api.remitflex.io/v1/rates \
-  -H "Authorization: Bearer rmf_test_..."
-```
+## Test mode is fully simulated
+
+When you use the **test** environment (`rmf_test_` keys or dashboard test mode), Remitflex routes provider calls to **in-process simulators** — not Relay, PayCrest, StRails, or on-chain rails.
+
+- No real cross-chain bridging, fiat settlement, or wallet movements
+- Simulated deposit addresses and request IDs (for example `sim_relay_…`)
+- Status advances automatically after ~8 seconds, or on demand via [`POST /v1/sandbox/simulate`](/guides/testing)
+- Your app code, webhooks, and database rows behave like production — only the upstream providers are mocked
+
+Live mode (`rmf_live_`) uses real provider credentials and real money movement.
+
+### Configuration
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `SANDBOX_SIMULATION_ENABLED` | `true` | When `true`, test traffic uses simulators. Set to `false` only if you intentionally want test keys to hit live provider APIs (not recommended). |
+| `SANDBOX_AUTO_SETTLE_MS` | `8000` | Delay before a simulated provider request auto-completes |
+
+<Info>
+  Self-hosted API deployments can tune these via environment variables. Hosted `api.remitflex.io` runs with simulation enabled for test keys.
+</Info>
 
 ## Going live
 

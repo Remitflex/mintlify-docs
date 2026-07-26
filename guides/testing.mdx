@@ -1,7 +1,7 @@
 ---
 title: "Test your integration"
 sidebarTitle: "Testing"
-description: "Validate payment routes, payment links, and local fiat orders with test API keys."
+description: "Validate payment routes, payment links, and local fiat orders with simulated test API keys."
 ---
 
 Use **`rmf_test_`** keys against `https://api.remitflex.io/v1`. Create keys in the [dashboard](https://dashboard.remitflex.io) with the scopes you need.
@@ -10,13 +10,50 @@ Use **`rmf_test_`** keys against `https://api.remitflex.io/v1`. Create keys in t
 |---|------|------|
 | Key prefix | `rmf_test_` | `rmf_live_` |
 | Base URL | `https://api.remitflex.io/v1` | Same |
+| Providers | In-process simulators (no real Relay/PayCrest/StRails/on-chain) | Live Relay, PayCrest, StRails |
 
-Environment is encoded in the key prefix — there is no separate sandbox hostname.
+Environment is encoded in the key prefix (or dashboard `X-Remitflex-Environment` header for JWT sessions). There is no separate sandbox hostname.
 
 ```bash
 export REMITFLEX_API_KEY="rmf_test_YOUR_KEY"
 export API_BASE="https://api.remitflex.io/v1"
 ```
+
+<Info>
+  All curl examples below use **`rmf_test_`** keys. They exercise Remitflex APIs end-to-end with **simulated** provider settlement — not testnet deposits or real fiat rails.
+</Info>
+
+## Simulated settlement
+
+Test mode never calls external Relay, PayCrest, or StRails APIs. Instead:
+
+1. **Create** — Your API call returns a simulated deposit address and provider id (for example `sim_relay_…`).
+2. **Auto-settle** — After about **8 seconds** (`SANDBOX_AUTO_SETTLE_MS`), the in-process simulator marks the request successful and fills synthetic tx hashes.
+3. **Sync** — Background jobs and read paths sync simulated status into your payment routes, collections, swaps, and offramps — same as live mode.
+4. **Force** — Skip the wait with `POST /v1/sandbox/simulate` (test environment only).
+
+Check simulator settings:
+
+```bash
+curl -s "$API_BASE/sandbox/status" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
+```
+
+Force a provider request to complete immediately:
+
+```bash
+curl -s -X POST "$API_BASE/sandbox/simulate" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "relay",
+    "id": "sim_relay_REPLACE_WITH_REQUEST_ID"
+  }' | jq .
+```
+
+Supported `provider` values: `relay`, `paycrest`, `strails`. Optional `status` overrides the default terminal status (for example `"failed"`).
+
+Requires a test key with at least one write scope among `transfers:write`, `collections:write`, `offramps:write`, or `onramps:write`.
 
 ## Payment link (invoice)
 
@@ -36,7 +73,7 @@ curl -s -X POST "$API_BASE/collections" \
   }' | jq .
 ```
 
-Open the returned `payUrl`. One link, one payment — see [Payment links](/products/payment-links).
+Open the returned `payUrl`. The pay page shows a **simulated** deposit address. Settlement completes automatically (~8s) or when you call `/sandbox/simulate` with the Relay request id from the collection.
 
 ## Checkout link
 
@@ -76,6 +113,8 @@ curl -s -X POST "$API_BASE/payment-routes" \
   }' | jq .
 ```
 
+Route deposits sync from the simulated Relay client — no on-chain transfer required.
+
 ## Offramp quote
 
 Verify your key has `fx:read` and `offramps:read`:
@@ -88,7 +127,7 @@ curl -s "$API_BASE/fiat/rates/USDC/10/NGN" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY" | jq .
 ```
 
-Use the returned rate when creating a live offramp. See [Local fiat](/products/fiat-rails) for the full payout flow.
+Fiat rate and institution endpoints use simulators in test mode. See [Local fiat](/products/fiat-rails) for the full payout flow.
 
 ## Webhooks
 
@@ -105,7 +144,7 @@ curl -s -X POST "$API_BASE/webhooks" \
   }' | jq .
 ```
 
-Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping. See [Webhooks](/guides/webhooks).
+Copy `secret` once, then `POST /webhooks/{id}/test` to queue a `webhook.test` ping. Simulated settlements still emit real outbound webhooks to your endpoint. See [Webhooks](/guides/webhooks).
 
 ## Retries
 

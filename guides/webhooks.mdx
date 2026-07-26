@@ -66,7 +66,7 @@ Compare `v1` from the header to `expected` (constant-time). Reject if the timest
 | Payment routes | `payment_route.created`, `payment_route.updated`, `payment_route.deposit.updated` |
 | Collections | `collection.created`, `collection.updated` |
 | Local fiat | `offramp.created`, `offramp.updated`, `onramp.created`, `onramp.updated` |
-| cNGN | `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`, `cngn.payin.*`, `cngn.deposit.*` (`.created` / `.updated`) |
+| cNGN | `cngn.convert.*`, `cngn.withdrawal.*`, `cngn.payout.*`, `cngn.payin.*`, `cngn.deposit.*` (`.created` / `.updated`); `cngn.customer.enabled`, `cngn.customer.failed` |
 | Test | `webhook.test` (from `POST /v1/webhooks/:id/test`) |
 
 Every subsequent status change emits `*.updated` (including cancel/expire), not only terminal states.
@@ -91,4 +91,4 @@ Dashboard JWT sessions can call these routes without scopes. API keys need the m
 
 - URL must be **HTTPS**. Private, loopback, and link-local targets are rejected (SSRF protection).
 - Signing secrets are stored server-side so RemitFlex can sign outbound deliveries; the raw value is only shown on create/rotate.
-- Inbound provider callbacks (separate routes) are not merchant outbound endpoints.
+- Inbound provider callbacks (PayCrest, StRails, Relay) use separate routes under `/v1/webhooks/{provider}` and are not merchant outbound endpoints. Payment route and collection status updates also arrive via Relay push (`POST /v1/webhooks/relay`) with poll jobs as fallback.

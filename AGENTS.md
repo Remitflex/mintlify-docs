@@ -32,7 +32,7 @@ Engineering detail (providers, workers, webhooks, env vars) belongs in `remitfle
 - **Swap** — Solana EURC ↔ USDC via deposit address. API: `/v1/swaps`; rates: `/v1/rates`.
 - **Offramp** — stablecoin in, local fiat bank payout out. API: `/v1/offramps`; ledger `kind: "offramp"`.
 - **Onramp** — local fiat deposit in, stablecoin delivery out. API: `/v1/onramps`; ledger `kind: "onramp"`.
-- **cNGN** — customer Smart Wallet rails (NGN VA, convert, withdraw, bank payout). API: `/v1/cngn/*`. Enable via `POST /v1/customers/:id/strails/onboard` (BVN) or dashboard **Customers → cNGN**. Distinct from local fiat offramps/onramps.
+- **cNGN** — customer Smart Wallet rails (NGN VA, convert, withdraw, bank payout). API: `/v1/cngn/*`. Enable via `POST /v1/cngn/customers/:id/enable` (BVN) or dashboard **Customers → cNGN**. Distinct from local fiat offramps/onramps.
 - **Corridor matrix** — curated origin→settlement snapshot in docs; **live source of truth** is `GET /v1/payment-routes/chains` (and `/collections/chains`).
 - **Pay page** — public payer UI at `payUrl`; quote via `POST /v1/pay/{id}/quote`.
 - **Fixed link** — exact receive amount; quote expires after `quoteValidUntil` (~1 min).
