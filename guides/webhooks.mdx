@@ -91,4 +91,3 @@ Dashboard JWT sessions can call these routes without scopes. API keys need the m
 
 - URL must be **HTTPS**. Private, loopback, and link-local targets are rejected (SSRF protection).
 - Signing secrets are stored server-side so RemitFlex can sign outbound deliveries; the raw value is only shown on create/rotate.
-- Inbound provider callbacks (PayCrest, StRails, Relay) use separate routes under `/v1/webhooks/{provider}` and are not merchant outbound endpoints. Payment route, collection, and swap status updates also arrive via Relay push (`POST /v1/webhooks/relay`) with poll jobs as fallback.

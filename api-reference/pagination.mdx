@@ -4,7 +4,7 @@ sidebarTitle: "Lists"
 description: "How list endpoints return data and current pagination behavior."
 ---
 
-List endpoints return items in a `data` envelope with a `total` count. Cursor-based pagination is not yet implemented — each endpoint returns a fixed maximum number of recent records.
+List endpoints return items in a `data` envelope with a `total` count. Each endpoint returns a fixed maximum number of recent records.
 
 ## Response shape
 
@@ -28,10 +28,6 @@ List endpoints return items in a `data` envelope with a `total` count. Cursor-ba
 | `GET /payment-routes` | All org routes | `createdAt` descending |
 | `GET /payment-routes/deposits` | 200 | `relayUpdatedAt` descending |
 
-<Note>
-  Pagination query parameters (`cursor`, `limit`, `offset`) are planned but not yet available. Integrations should not assume unbounded list sizes in the future.
-</Note>
-
 ## Filtering
 
-List endpoints do not support query-parameter filtering today. Use `GET /payment-routes/{id}` to fetch a single resource by ID.
+List endpoints do not support query-parameter filtering. Use `GET /payment-routes/{id}` to fetch a single resource by ID.

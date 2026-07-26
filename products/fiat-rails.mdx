@@ -34,7 +34,7 @@ curl "https://api.remitflex.io/v1/fiat/rates/USDC/100/NGN" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
-NGN is live today. Additional currencies appear in `/fiat/currencies` as they become available — do not hardcode.
+NGN is live today. Additional currencies appear in `/fiat/currencies` as they become available.
 
 ## Offramps — pay a local bank account
 
@@ -146,6 +146,4 @@ curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
 
 Filter by `customerId` to build per-user payout or funding history.
 
-<Note>
-  Prefer [outbound webhooks](/guides/webhooks) for status updates. You can still poll order endpoints or the transactions ledger.
-</Note>
+For status updates, see [Webhooks](/guides/webhooks).

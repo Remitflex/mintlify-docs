@@ -3657,9 +3657,8 @@ paths:
       summary: Enable cNGN (BVN)
       description: |
         Starts KYC enablement for the customer. Requires `transfers:write` and `Idempotency-Key`.
-        Completion is asynchronous: RemitFlex polls until ready and emits `cngn.customer.enabled`
-        or `cngn.customer.failed`. Reload the customer with `GET /customers/{id}` — do not poll a
-        provider status endpoint.
+        Completion is asynchronous: RemitFlex emits `cngn.customer.enabled` or `cngn.customer.failed`
+        when ready. Reload the customer with `GET /customers/{id}`, or subscribe to webhooks.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
