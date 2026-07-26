@@ -67,7 +67,7 @@ Once enabled:
 | How | On customer after enable | `POST /v1/cngn/payins` |
 | Destination | Customer Smart Wallet (cNGN) | Default: sweep to customer Smart Wallet |
 
-Permanent credits create local **`cngn_deposit`** rows (email + `cngn.deposit.*` webhooks). List with `GET /v1/cngn/deposits`.
+Permanent credits create local **`cngn_deposit`** rows (email + `cngn.deposit.*` webhooks). List with `GET /v1/cngn/deposits` (optional `?customerId=`).
 
 ## Temporary payin (NGN → Smart Wallet)
 
@@ -109,6 +109,13 @@ Until a bank `accountNumber` exists, status stays **`requested`**. RemitFlex set
 
 Payins appear in [Transactions](/products/transactions) as `cngn_payin`.
 
+List payins for one customer:
+
+```bash
+curl "https://api.remitflex.io/v1/cngn/payins?customerId=a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  -H "Authorization: Bearer $REMITFLEX_API_KEY"
+```
+
 ## Convert (cNGN ↔ USDC/USDT)
 
 ```bash
@@ -132,7 +139,7 @@ curl -X POST https://api.remitflex.io/v1/cngn/converts \
 | `smartWalletAddress` | Optional; defaults to customer's Smart Wallet |
 | `destinationAddress` | Optional destination for output tokens |
 
-List: `GET /v1/cngn/converts`. Get: `GET /v1/cngn/converts/{convertId}` (`{convertId}` is the RemitFlex convert UUID).
+List: `GET /v1/cngn/converts` (optional `?customerId=`). Get: `GET /v1/cngn/converts/{convertId}` (`{convertId}` is the RemitFlex convert UUID).
 
 ## Withdrawal
 
@@ -153,6 +160,8 @@ curl -X POST https://api.remitflex.io/v1/cngn/withdrawals \
 ```
 
 `customerId` is **required**.
+
+List: `GET /v1/cngn/withdrawals?customerId=...`
 
 ## Banks & account resolution
 
@@ -189,6 +198,8 @@ curl -X POST https://api.remitflex.io/v1/cngn/payouts \
 
 `customerId` is **required**. `amount` is in **Naira**. Minimum payout is **₦151**.
 
+List: `GET /v1/cngn/payouts?customerId=...`
+
 ## Status, email, and webhooks
 
 Money events are **stored locally**. On create/update RemitFlex:
@@ -207,4 +218,12 @@ All of the above appear in [Transactions](/products/transactions) (`cngn_deposit
 | Need | Use |
 |------|-----|
 | Live wallet balances | `GET /v1/cngn/customers/{customerId}/wallets` (or dashboard **Refresh**). Primary balances are live; the wallet list is a retained cache — RemitFlex does not drop addresses just because StRails stopped listing them. |
-| Money history (source of truth) | `GET /v1/transactions` and `/v1/cngn/*` list endpoints |
+| Money history (source of truth) | `GET /v1/transactions?customerId=` and the cNGN list endpoints below with optional `?customerId=` |
+
+All cNGN money lists accept optional `customerId` — RemitFlex is customer-first; filter when reconciling a single counterparty:
+
+- `GET /v1/cngn/payins?customerId=`
+- `GET /v1/cngn/deposits?customerId=`
+- `GET /v1/cngn/converts?customerId=`
+- `GET /v1/cngn/withdrawals?customerId=`
+- `GET /v1/cngn/payouts?customerId=`

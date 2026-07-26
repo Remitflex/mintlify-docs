@@ -23,9 +23,9 @@ Discover supported networks in [Networks & corridors](/concepts/networks-and-cor
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/payment-routes` | Create route |
-| `GET` | `/payment-routes` | List routes |
+| `GET` | `/payment-routes` | List routes (`?customerId=` optional) |
 | `GET` | `/payment-routes/{paymentRouteId}` | Get route |
-| `GET` | `/payment-routes/deposits` | All deposits |
+| `GET` | `/payment-routes/deposits` | All deposits (`?customerId=` optional) |
 | `GET` | `/payment-routes/{paymentRouteId}/deposits` | Route deposits |
 | `POST` | `/payment-routes/{paymentRouteId}/deposits/sync` | Refresh deposit state |
 | `DELETE` | `/payment-routes/{paymentRouteId}` | Archive route |

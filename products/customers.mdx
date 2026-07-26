@@ -11,7 +11,7 @@ Customers represent the people or businesses you move money for — senders, rec
 ## Why customers matter
 
 - Attach `customerId` to [payment routes](/products/payment-routes), [payment links](/products/payment-links), and [local fiat](/products/fiat-rails) orders for per-counterparty tracking
-- Filter `GET /v1/transactions?customerId=...`
+- Filter lists with `?customerId=` — transactions, payment routes (+ deposits), collections, swaps, local fiat offramps/onramps, and all cNGN money lists
 - Reconcile by customer name in the transactions ledger
 
 ## List customers

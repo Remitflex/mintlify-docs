@@ -31,6 +31,16 @@ curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
   -H "Authorization: Bearer $REMITFLEX_API_KEY"
 ```
 
+For product-specific history, the same `?customerId=` filter is on:
+
+- cNGN: `/v1/cngn/payins`, `/deposits`, `/converts`, `/withdrawals`, `/payouts`
+- Local fiat: `/v1/offramps`, `/v1/onramps`
+- Payment routes: `/v1/payment-routes`, `/v1/payment-routes/deposits`
+- Payment links: `/v1/collections`
+- Swaps: `/v1/swaps`
+
+See [cNGN](/products/cngn) and [Local fiat](/products/fiat-rails).
+
 ## Refreshing status
 
 - Payment routes: `POST /v1/payment-routes/{paymentRouteId}/deposits/sync`

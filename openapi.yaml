@@ -2765,10 +2765,12 @@ paths:
     get:
       operationId: listPaymentRoutes
       summary: List payment routes
-      description: Requires `collections:read` scope.
+      description: Optionally filter by `customerId`. Requires `collections:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           $ref: "#/components/responses/ListPaymentRoutes"
@@ -2795,10 +2797,12 @@ paths:
     get:
       operationId: listAllPaymentRouteDeposits
       summary: List all deposits
-      description: Requires `collections:read` scope.
+      description: Optionally filter by `customerId` (deposits on that customer's routes). Requires `collections:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           $ref: "#/components/responses/ListDeposits"
@@ -3199,9 +3203,12 @@ paths:
     get:
       operationId: listOfframps
       summary: List offramp orders
+      description: Optionally filter by `customerId`. Requires `offramps:read`.
       tags: [Offramps]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           $ref: "#/components/responses/ListOfframps"
@@ -3309,9 +3316,12 @@ paths:
     get:
       operationId: listOnramps
       summary: List onramp orders
+      description: Optionally filter by `customerId`. Requires `onramps:read`.
       tags: [Onramps]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           $ref: "#/components/responses/ListOnramps"
@@ -3905,10 +3915,12 @@ paths:
       summary: List cNGN swaps
       description: |
         Lists Smart Wallet swaps (CNGN/USDC/USDT). Separate from Solana Relay `/swaps`.
-        Requires `transfers:read` scope.
+        Optionally filter by `customerId`. Requires `transfers:read` scope.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Rails swaps fetched
@@ -3991,10 +4003,12 @@ paths:
     get:
       operationId: listRailsWithdrawals
       summary: List cNGN withdrawals
-      description: Requires `transfers:read` scope.
+      description: Optionally filter by `customerId`. Requires `transfers:read` scope.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Rails withdrawals fetched
@@ -4132,10 +4146,14 @@ paths:
     get:
       operationId: listRailsOfframps
       summary: List cNGN user offramps
-      description: User cNGN → NGN bank offramps (not `/v1/offramps` local fiat). Requires `transfers:read`.
+      description: |
+        User cNGN → NGN bank offramps (not `/v1/offramps` local fiat).
+        Optionally filter by `customerId`. Requires `transfers:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Rails offramps fetched
@@ -4214,10 +4232,12 @@ paths:
     get:
       operationId: listRailsOnramps
       summary: List cNGN temporary VA onramps
-      description: Requires `transfers:read`.
+      description: Optionally filter by `customerId`. Requires `transfers:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: Rails onramps fetched
@@ -4331,10 +4351,14 @@ paths:
     get:
       operationId: listCngnDeposits
       summary: List cNGN deposits
-      description: Returns locally persisted cNGN deposit records. Requires `transfers:read`.
+      description: |
+        Returns locally persisted cNGN deposit records (permanent VA credits).
+        Optionally filter by `customerId`. Requires `transfers:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerIdQuery"
       responses:
         "200":
           description: cNGN deposits

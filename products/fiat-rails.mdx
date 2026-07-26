@@ -60,6 +60,8 @@ Send stablecoin; the recipient receives fiat in their bank account.
 
 Cancel an unfunded order with `DELETE /v1/offramps/:orderId`. You cannot cancel after linking an external transfer.
 
+List orders: `GET /v1/offramps?customerId=...`
+
 **Scopes:** `offramps:read`, `offramps:write`  
 The legacy `payouts:*` scopes still work as aliases for offramps.
 
@@ -105,6 +107,8 @@ Create a virtual account; your user deposits local currency; stablecoin is deliv
 
 When settlement completes, the response includes `settlementTxHash` and `settledUsdcAmount`.
 
+List orders: `GET /v1/onramps?customerId=...`
+
 **Scopes:** `onramps:read`, `onramps:write`
 
 ### Example — create onramp
@@ -144,6 +148,6 @@ curl "https://api.remitflex.io/v1/transactions?customerId=cus_abc123" \
 | `offramp` | Stablecoin → local fiat payout |
 | `onramp` | Local fiat deposit → stablecoin delivery |
 
-Filter by `customerId` to build per-user payout or funding history.
+Filter by `customerId` on `GET /v1/transactions`, `GET /v1/offramps`, and `GET /v1/onramps` to build per-user payout or funding history.
 
 For status updates, see [Webhooks](/guides/webhooks).
