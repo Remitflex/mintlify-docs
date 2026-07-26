@@ -23,10 +23,10 @@ Use the reference endpoints to discover what is supported and validate bank deta
 
 | Endpoint | Purpose | Scope |
 |----------|---------|-------|
-| `GET /v1/fiat/currencies` | Supported local currencies | `offramps:read` or `onramps:read` |
-| `GET /v1/fiat/institutions/:code` | Banks for a currency | `offramps:read` or `onramps:read` |
-| `POST /v1/fiat/verify-account` | Confirm account name before payout | `offramps:write` or `onramps:write` |
-| `GET /v1/fiat/rates/:token/:amount/:currency` | Sell quote (stablecoin → fiat) | `fx:read` |
+| `GET /v1/fiat/currencies` | Supported local currencies | `api:read` |
+| `GET /v1/fiat/institutions/:code` | Banks for a currency | `api:read` |
+| `POST /v1/fiat/verify-account` | Confirm account name before payout | `api:write` |
+| `GET /v1/fiat/rates/:token/:amount/:currency` | Sell quote (stablecoin → fiat) | `api:read` |
 
 ```bash
 # Example: quote selling 100 USDC to NGN
@@ -62,8 +62,8 @@ Cancel an unfunded order with `DELETE /v1/offramps/:orderId`. You cannot cancel 
 
 List orders: `GET /v1/offramps?customerId=...`
 
-**Scopes:** `offramps:read`, `offramps:write`  
-The legacy `payouts:*` scopes still work as aliases for offramps.
+**Scopes:** `api:read`, `api:write`  
+
 
 ### Example — create offramp
 
@@ -109,7 +109,7 @@ When settlement completes, the response includes `settlementTxHash` and `settled
 
 List orders: `GET /v1/onramps?customerId=...`
 
-**Scopes:** `onramps:read`, `onramps:write`
+**Scopes:** `api:read`, `api:write`
 
 ### Example — create onramp
 

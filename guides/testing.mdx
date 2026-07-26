@@ -4,7 +4,7 @@ sidebarTitle: "Testing"
 description: "Validate payment routes, payment links, and local fiat orders with simulated test API keys."
 ---
 
-Use **`rmf_test_`** keys against `https://api.remitflex.io/v1`. Create keys in the [dashboard](https://dashboard.remitflex.io) with the scopes you need.
+Use **`rmf_test_`** keys against `https://api.remitflex.io/v1`. Create keys in the [dashboard](https://dashboard.remitflex.io) with `api:read` and `api:write` (full access).
 
 | | Test | Live |
 |---|------|------|
@@ -53,7 +53,7 @@ curl -s -X POST "$API_BASE/sandbox/simulate" \
 
 Supported `provider` values: `relay`, `paycrest`, `strails`. Optional `status` overrides the default terminal status (for example `"failed"`).
 
-Requires a test key with at least one write scope among `transfers:write`, `collections:write`, `offramps:write`, or `onramps:write`.
+Requires a test key with an `api:write` secret key.
 
 ## Payment link (invoice)
 
@@ -117,7 +117,7 @@ Route deposits sync from the simulated Relay client — no on-chain transfer req
 
 ## Offramp quote
 
-Verify your key has `fx:read` and `offramps:read`:
+Verify your key has `api:read`:
 
 ```bash
 curl -s "$API_BASE/fiat/currencies" \
@@ -131,7 +131,7 @@ Fiat rate and institution endpoints use simulators in test mode. See [Local fiat
 
 ## Webhooks
 
-Create a key with `webhooks:write`, then register an HTTPS receiver:
+Create a key with `api:write`, then register an HTTPS receiver:
 
 ```bash
 curl -s -X POST "$API_BASE/webhooks" \

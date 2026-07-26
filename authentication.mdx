@@ -24,8 +24,8 @@ API keys are created in the [Remitflex Dashboard](https://dashboard.remitflex.io
   <Step title="Open API Keys">
     Navigate to **Settings → API Keys** and click **Create new key**.
   </Step>
-  <Step title="Choose environment and scopes">
-    Select **test** or **live**, then pick the minimum scopes your integration needs. See [Key scopes](#key-scopes) below.
+  <Step title="Choose environment and access">
+    Select **test** or **live**, then **read**, **write** (full access), or both. See [Key scopes](#key-scopes) below.
   </Step>
   <Step title="Copy the key immediately">
     The full key is shown **once** at creation. Store it in a secrets manager or environment variable.
@@ -86,26 +86,18 @@ Send the key as a Bearer token on every business API request:
 
 ## Key scopes
 
-Each key is issued with one or more scopes. Scopes are enforced on API-key requests. Dashboard JWT sessions have full access to business routes.
+Secret API keys use a simple **read / write** model. Scopes are enforced on API-key requests. Dashboard JWT sessions have full access to business routes.
 
-| Scope | Endpoints |
-|-------|-----------|
-| `fx:read` | `GET /v1/fiat/rates/...`, `GET /v1/rates`, `GET /v1/rates/{from}/{to}` |
-| `transfers:read` | `GET /v1/transactions`, `/v1/customers`, `/v1/swaps`, `/v1/cngn/*` reads |
-| `transfers:write` | `POST /v1/customers`, `POST /v1/swaps`, `/v1/cngn/*` writes |
-| `collections:read` | `GET /v1/payment-routes`, `GET /v1/collections`, discovery `/chains` |
-| `collections:write` | `POST /v1/payment-routes`, `POST /v1/collections`, sync, cancel, logo upload |
-| `offramps:read` | `GET /v1/offramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
-| `offramps:write` | `POST /v1/offramps`, `DELETE /v1/offramps/:orderId`, `PATCH .../external-transfer`, `POST /v1/fiat/verify-account` |
-| `onramps:read` | `GET /v1/onramps`, `/v1/fiat/currencies`, `/v1/fiat/institutions/:code` |
-| `onramps:write` | `POST /v1/onramps`, `POST /v1/fiat/verify-account` |
-| `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
-| `wallets:read` / `wallets:write` | Reserved for future wallet APIs |
-| `webhooks:read` / `webhooks:write` | List/manage outbound webhook endpoints (`/v1/webhooks`) |
+| Scope | Access |
+|-------|--------|
+| `api:read` | List and fetch all business resources (customers, transactions, routes, links, swaps, cNGN, local fiat, rates, webhooks) |
+| `api:write` | Create and mutate those resources (**implies read**) |
 
-Grant the minimum scopes required. A read-only reporting tool only needs `transfers:read` and `fx:read`.
+New keys should use only these scopes. Existing keys with older product scopes (`transfers:*`, `collections:*`, `offramps:*`, etc.) still work — RemitFlex treats any legacy write as full write, and any legacy read as full read.
 
-**Publishable keys** (`rmf_pk_*`) are embed-safe and receive only `collections:read` (pay-page reads). They cannot create or mutate collections — use a secret key or dashboard JWT for writes.
+**Publishable keys** (`rmf_pk_*`) are embed-safe and receive only `collections:read` (pay-page / embed reads). They cannot create or mutate resources — use a secret key or dashboard JWT for writes.
+
+Default for backend integrations: **full access** (`api:read` + `api:write`).
 
 ## Idempotency
 
@@ -121,7 +113,7 @@ These routes require a dashboard access token, not an API key:
 - `/v1/api-keys/*` — create, list, revoke keys
 - `/v1/admin/ops/*` — RemitFlex internal ops only (not a merchant API)
 
-Webhook endpoint CRUD (`/v1/webhooks`) accepts **JWT or** API keys with `webhooks:read` / `webhooks:write`. See [Webhooks](/guides/webhooks).
+Webhook endpoint CRUD (`/v1/webhooks`) accepts **JWT or** API keys with `api:read` / `api:write`. See [Webhooks](/guides/webhooks).
 
 ## Error responses
 
@@ -135,7 +127,7 @@ Webhook endpoint CRUD (`/v1/webhooks`) accepts **JWT or** API keys with `webhook
 | HTTP | Typical cause |
 |------|----------------|
 | `401` | Missing, invalid, expired, or revoked API key |
-| `403` | Valid key but missing required scope (`Missing required scopes: transfers:write`) |
+| `403` | Valid key but missing required scope (`Missing required scopes: api:write`) |
 | `400` | Missing `Idempotency-Key` on a mutating API-key request |
 
 ## Security best practices

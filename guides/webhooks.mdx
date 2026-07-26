@@ -6,7 +6,7 @@ description: "Receive signed HTTPS POSTs on every money-flow status change."
 
 RemitFlex can POST signed JSON events to your HTTPS endpoints whenever a swap, payment route, collection, local fiat order, or cNGN object is created or changes status.
 
-Manage endpoints in the [merchant app](https://app.remitflex.io/webhooks) under **Webhooks**, or via the API with JWT or an API key that includes `webhooks:read` / `webhooks:write`.
+Manage endpoints in the [merchant app](https://app.remitflex.io/webhooks) under **Webhooks**, or via the API with JWT or an API key that includes `api:read` / `api:write`.
 
 ## Quick setup
 
@@ -77,17 +77,17 @@ Every subsequent status change emits `*.updated` (including cancel/expire), not 
 
 | Method | Path | Scope |
 |--------|------|-------|
-| `POST` | `/v1/webhooks` | `webhooks:write` |
-| `GET` | `/v1/webhooks` | `webhooks:read` |
-| `GET` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:read` |
-| `PATCH` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:write` |
-| `POST` | `/v1/webhooks/{webhookEndpointId}/rotate-secret` | `webhooks:write` |
-| `DELETE` | `/v1/webhooks/{webhookEndpointId}` | `webhooks:write` (soft revoke) |
-| `GET` | `/v1/webhooks/{webhookEndpointId}/deliveries` | `webhooks:read` |
-| `POST` | `/v1/webhooks/{webhookEndpointId}/test` | `webhooks:write` |
-| `GET` | `/v1/webhooks/event-types` | `webhooks:read` |
+| `POST` | `/v1/webhooks` | `api:write` |
+| `GET` | `/v1/webhooks` | `api:read` |
+| `GET` | `/v1/webhooks/{webhookEndpointId}` | `api:read` |
+| `PATCH` | `/v1/webhooks/{webhookEndpointId}` | `api:write` |
+| `POST` | `/v1/webhooks/{webhookEndpointId}/rotate-secret` | `api:write` |
+| `DELETE` | `/v1/webhooks/{webhookEndpointId}` | `api:write` (soft revoke) |
+| `GET` | `/v1/webhooks/{webhookEndpointId}/deliveries` | `api:read` |
+| `POST` | `/v1/webhooks/{webhookEndpointId}/test` | `api:write` |
+| `GET` | `/v1/webhooks/event-types` | `api:read` |
 
-Dashboard JWT sessions can call these routes without scopes. API keys need the matching `webhooks:*` scope.
+Dashboard JWT sessions can call these routes without scopes. API keys need the matching `api:read` / `api:write` scope.
 
 ## Security notes
 

@@ -64,27 +64,13 @@ API base: `https://api.remitflex.io/v1`
 
 ## Scopes
 
-API keys use fine-grained scopes. Grant only what each service needs:
-
-| Scope | Access |
-|-------|--------|
-| `fx:read` | Fiat sell quotes and Solana swap rates |
-| `transfers:read` | Customers, transactions, swaps, cNGN reads |
-| `transfers:write` | Create customers, swaps, cNGN writes |
-| `collections:read` | Read payment routes and payment links |
-| `collections:write` | Create and manage payment routes and payment links |
-| `offramps:read` | Read offramp orders, fiat currencies and institutions |
-| `offramps:write` | Create/cancel offramps, verify bank accounts |
-| `onramps:read` | Read onramp orders, fiat currencies and institutions |
-| `onramps:write` | Create onramps, verify bank accounts |
-| `payouts:read` / `payouts:write` | Deprecated aliases for `offramps:*` |
-| `webhooks:read` / `webhooks:write` | Manage outbound webhook endpoints |
+Secret API keys use **`api:read`** and/or **`api:write`** (write implies read). Publishable keys (`rmf_pk_*`) are embed-only (`collections:read`).
 
 See [Authentication](/authentication) for key format and idempotency rules.
 
 ## Limits
 
 - **API keys** — create and manage keys in the dashboard (JWT), not via the public API
-- **Custodial wallets** — scopes exist; wallet APIs are not live
+- Prefer one **full-access** secret key per environment until you need a read-only reporter
 
 For push updates, see [Webhooks](/guides/webhooks).

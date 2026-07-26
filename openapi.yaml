@@ -2577,7 +2577,7 @@ paths:
     get:
       operationId: listCustomers
       summary: List customers
-      description: Requires `transfers:read` scope.
+      description: Requires `api:read` scope.
       tags: [Customers]
       security:
         - ApiKeyAuth: []
@@ -2587,7 +2587,7 @@ paths:
     post:
       operationId: createCustomer
       summary: Create customer
-      description: Requires `transfers:write` scope and `Idempotency-Key`.
+      description: Requires `api:write` scope and `Idempotency-Key`.
       tags: [Customers]
       security:
         - ApiKeyAuth: []
@@ -2609,7 +2609,7 @@ paths:
       summary: Get customer
       description: |
         Returns a single customer by RemitFlex customer UUID.
-        Requires `transfers:read` scope. Includes the `cngn` block when enablement
+        Requires `api:read` scope. Includes the `cngn` block when enablement
         has been started or completed.
       tags: [Customers]
       security:
@@ -2641,7 +2641,7 @@ paths:
       summary: Get organisation settings
       description: >
         Returns merchant settings including whether customer receipt emails are enabled.
-        Requires `transfers:read`. Dashboard JWT also works.
+        Requires `api:read`. Dashboard JWT also works.
       tags: [Organisation]
       security:
         - ApiKeyAuth: []
@@ -2670,7 +2670,7 @@ paths:
       operationId: updateOrgSettings
       summary: Update organisation settings
       description: >
-        Toggle customer receipt emails and other org preferences. Requires `transfers:write`.
+        Toggle customer receipt emails and other org preferences. Requires `api:write`.
       tags: [Organisation]
       security:
         - ApiKeyAuth: []
@@ -2710,7 +2710,7 @@ paths:
     get:
       operationId: listTransactions
       summary: List transactions
-      description: Unified ledger of payment-route deposits. Optionally filter by `customerId`. Requires `transfers:read` scope.
+      description: Unified ledger of payment-route deposits. Optionally filter by `customerId`. Requires `api:read` scope.
       tags: [Transactions]
       security:
         - ApiKeyAuth: []
@@ -2726,7 +2726,7 @@ paths:
       summary: List supported networks
       description: >
         Returns **origins** (networks payers can send from, with accepted tokens) and
-        **settlements** (Base or Solana, with USDC/USDT/EURC). Requires `collections:read` scope.
+        **settlements** (Base or Solana, with USDC/USDT/EURC). Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2740,7 +2740,7 @@ paths:
       summary: List routing options
       description: >
         Returns grouped `routing` only — same array included on `GET /chains`.
-        Requires `collections:read` scope.
+        Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2753,7 +2753,7 @@ paths:
       operationId: getPaymentRouteCurrencyConfig
       summary: Get origins, settlements, and routing
       description: >
-        Same response as `/payment-routes/chains`. Requires `collections:read` scope.
+        Same response as `/payment-routes/chains`. Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2765,7 +2765,7 @@ paths:
     get:
       operationId: listPaymentRoutes
       summary: List payment routes
-      description: Optionally filter by `customerId`. Requires `collections:read` scope.
+      description: Optionally filter by `customerId`. Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2777,7 +2777,7 @@ paths:
     post:
       operationId: createPaymentRoute
       summary: Create payment route
-      description: Creates a cross-chain payment route. Requires `collections:write` scope and `Idempotency-Key`.
+      description: Creates a cross-chain payment route. Requires `api:write` scope and `Idempotency-Key`.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2797,7 +2797,7 @@ paths:
     get:
       operationId: listAllPaymentRouteDeposits
       summary: List all deposits
-      description: Optionally filter by `customerId` (deposits on that customer's routes). Requires `collections:read` scope.
+      description: Optionally filter by `customerId` (deposits on that customer's routes). Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2811,7 +2811,7 @@ paths:
     get:
       operationId: getPaymentRoute
       summary: Get payment route
-      description: Requires `collections:read` scope.
+      description: Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2838,7 +2838,7 @@ paths:
     delete:
       operationId: archivePaymentRoute
       summary: Archive payment route
-      description: Requires `collections:write` scope and `Idempotency-Key`.
+      description: Requires `api:write` scope and `Idempotency-Key`.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2859,7 +2859,7 @@ paths:
     get:
       operationId: listPaymentRouteDeposits
       summary: List route deposits
-      description: Requires `collections:read` scope.
+      description: Requires `api:read` scope.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2879,7 +2879,7 @@ paths:
     post:
       operationId: syncPaymentRouteDeposits
       summary: Sync route deposits
-      description: Pulls latest deposit state for the route. Requires `collections:write` scope and `Idempotency-Key`.
+      description: Pulls latest deposit state for the route. Requires `api:write` scope and `Idempotency-Key`.
       tags: [Payment routes]
       security:
         - ApiKeyAuth: []
@@ -2911,7 +2911,7 @@ paths:
     get:
       operationId: listCollectionCorridors
       summary: List supported payment paths
-      description: Same payment paths as `/payment-routes/corridors`. Requires `collections:read` scope.
+      description: Same payment paths as `/payment-routes/corridors`. Requires `api:read` scope.
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
@@ -2934,7 +2934,7 @@ paths:
     post:
       operationId: createCollection
       summary: Create payment link
-      description: Creates a payment link. Set linkMode to invoice (one payment) or checkout (reusable URL with per-payer sessions). Merchant sets destination only; payer selects origin on the pay page. Requires collections:write and Idempotency-Key.
+      description: Creates a payment link. Set linkMode to invoice (one payment) or checkout (reusable URL with per-payer sessions). Merchant sets destination only; payer selects origin on the pay page. Requires `api:write` and Idempotency-Key.
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
@@ -2978,7 +2978,7 @@ paths:
     patch:
       operationId: updateCollection
       summary: Update payment link
-      description: "Update metadata, embed theme, or cancel (status cancelled). Logo is uploaded separately via POST /collections/{collectionId}/logo. Requires collections:write."
+      description: "Update metadata, embed theme, or cancel (status cancelled). Logo is uploaded separately via POST /collections/{collectionId}/logo. Requires `api:write`."
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
@@ -3045,7 +3045,7 @@ paths:
     post:
       operationId: uploadCollectionLogo
       summary: Upload payment link logo
-      description: Multipart upload (`logo` field). PNG, JPEG, or WebP; max 2 MB. SVG is not allowed. Requires `collections:write`.
+      description: Multipart upload (`logo` field). PNG, JPEG, or WebP; max 2 MB. SVG is not allowed. Requires `api:write`.
       tags: [Payment links]
       security:
         - ApiKeyAuth: []
@@ -3203,7 +3203,7 @@ paths:
     get:
       operationId: listOfframps
       summary: List offramp orders
-      description: Optionally filter by `customerId`. Requires `offramps:read`.
+      description: Optionally filter by `customerId`. Requires `api:read`.
       tags: [Offramps]
       security:
         - ApiKeyAuth: []
@@ -3215,7 +3215,7 @@ paths:
     post:
       operationId: createOfframp
       summary: Create offramp order
-      description: Convert stablecoin to local fiat bank disbursement. Requires `offramps:write` and `Idempotency-Key`.
+      description: Convert stablecoin to local fiat bank disbursement. Requires `api:write` and `Idempotency-Key`.
       tags: [Offramps]
       security:
         - ApiKeyAuth: []
@@ -3316,7 +3316,7 @@ paths:
     get:
       operationId: listOnramps
       summary: List onramp orders
-      description: Optionally filter by `customerId`. Requires `onramps:read`.
+      description: Optionally filter by `customerId`. Requires `api:read`.
       tags: [Onramps]
       security:
         - ApiKeyAuth: []
@@ -3328,7 +3328,7 @@ paths:
     post:
       operationId: createOnramp
       summary: Create onramp order
-      description: Collect local fiat via virtual account; stablecoin is delivered to `destinationAddress`. Requires `onramps:write` and `Idempotency-Key`.
+      description: Collect local fiat via virtual account; stablecoin is delivered to `destinationAddress`. Requires `api:write` and `Idempotency-Key`.
       tags: [Onramps]
       security:
         - ApiKeyAuth: []
@@ -3459,7 +3459,7 @@ paths:
       summary: List exchange rates
       description: >
         Returns live indicative quotes for Solana EURC↔USDC.
-        Requires `fx:read` scope. Always re-quote on `POST /swaps`.
+        Requires `api:read` scope. Always re-quote on `POST /swaps`.
       tags: [Rates]
       security:
         - ApiKeyAuth: []
@@ -3497,7 +3497,7 @@ paths:
     get:
       operationId: listRateCurrencies
       summary: List currencies and pairs
-      description: Returns Solana USDC/EURC and the supported swap pairs. Requires `fx:read` scope.
+      description: Returns Solana USDC/EURC and the supported swap pairs. Requires `api:read` scope.
       tags: [Rates]
       security:
         - ApiKeyAuth: []
@@ -3516,7 +3516,7 @@ paths:
       summary: Get pair rate
       description: >
         Live indicative quote for a Solana EURC↔USDC pair.
-        Optional `amount` and `tradeType` query params. Requires `fx:read` scope.
+        Optional `amount` and `tradeType` query params. Requires `api:read` scope.
       tags: [Rates]
       security:
         - ApiKeyAuth: []
@@ -3570,7 +3570,7 @@ paths:
     get:
       operationId: listSwaps
       summary: List swaps
-      description: Returns up to 50 swaps for your organisation, newest first. Optionally filter by `customerId`. Requires `transfers:read` scope.
+      description: Returns up to 50 swaps for your organisation, newest first. Optionally filter by `customerId`. Requires `api:read` scope.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
@@ -3605,7 +3605,7 @@ paths:
         Creates a Solana EURC↔USDC swap and returns a deposit address.
         RemitFlex does not custody funds. Deposit the `from` token to `depositAddress` before expiry.
         `refundTo` is always required. Tied to `customerId` (defaults to org primary customer).
-        Requires `transfers:write` scope and an `Idempotency-Key` header.
+        Requires `api:write` scope and an `Idempotency-Key` header.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
@@ -3664,7 +3664,7 @@ paths:
     get:
       operationId: getSwap
       summary: Get swap
-      description: Requires `transfers:read` scope. Syncs Relay status before returning.
+      description: Requires `api:read` scope. Syncs Relay status before returning.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
@@ -3700,7 +3700,7 @@ paths:
     post:
       operationId: cancelSwap
       summary: Cancel swap
-      description: Cancels a swap in `awaiting_deposit` status. Requires `transfers:write` scope and `Idempotency-Key`.
+      description: Cancels a swap in `awaiting_deposit` status. Requires `api:write` scope and `Idempotency-Key`.
       tags: [Swaps]
       security:
         - ApiKeyAuth: []
@@ -3736,7 +3736,7 @@ paths:
       operationId: enableCngnCustomer
       summary: Enable cNGN (BVN)
       description: |
-        Starts KYC enablement for the customer. Requires `transfers:write` and `Idempotency-Key`.
+        Starts KYC enablement for the customer. Requires `api:write` and `Idempotency-Key`.
         Completion is asynchronous: RemitFlex emits `cngn.customer.enabled` or `cngn.customer.failed`
         when ready. Reload the customer with `GET /customers/{customerId}`, or subscribe to webhooks.
       tags: [cNGN]
@@ -3810,7 +3810,7 @@ paths:
       summary: Get cNGN wallets
       description: |
         Cached wallet list plus **live** Smart Wallet token balances.
-        Customer must have cNGN enabled. Requires `transfers:read`.
+        Customer must have cNGN enabled. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -3864,7 +3864,7 @@ paths:
       summary: Get cNGN history
       description: |
         Cached deposit/payout history for the customer's cNGN wallet.
-        Customer must have cNGN enabled. Requires `transfers:read`.
+        Customer must have cNGN enabled. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -3915,7 +3915,7 @@ paths:
       summary: List cNGN swaps
       description: |
         Lists Smart Wallet swaps (CNGN/USDC/USDT). Separate from Solana Relay `/swaps`.
-        Optionally filter by `customerId`. Requires `transfers:read` scope.
+        Optionally filter by `customerId`. Requires `api:read` scope.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -3929,7 +3929,7 @@ paths:
       summary: Create cNGN swap
       description: |
         Swaps CNGN ↔ USDC/USDT on the customer's Smart Wallet via `POST /swap`.
-        Customer must be cNGN-enabled for the customer. Requires `transfers:write` and `Idempotency-Key`.
+        Customer must be cNGN-enabled for the customer. Requires `api:write` and `Idempotency-Key`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -3976,7 +3976,7 @@ paths:
     get:
       operationId: getRailsSwap
       summary: Get cNGN swap
-      description: Requires `transfers:read`. Refreshes status on read by default.
+      description: Requires `api:read`. Refreshes status on read by default.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4003,7 +4003,7 @@ paths:
     get:
       operationId: listRailsWithdrawals
       summary: List cNGN withdrawals
-      description: Optionally filter by `customerId`. Requires `transfers:read` scope.
+      description: Optionally filter by `customerId`. Requires `api:read` scope.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4017,7 +4017,7 @@ paths:
       summary: Create cNGN withdrawal
       description: |
         Withdraws CNGN/USDC/USDT from the user Smart Wallet to an external address (`/withdrawasset`).
-        Requires `transfers:write` and `Idempotency-Key`.
+        Requires `api:write` and `Idempotency-Key`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4088,7 +4088,7 @@ paths:
         Nigerian banks supported for cNGN → NGN offramps and account-name
         resolution (intersection of supported NIBSS banks and name-enquiry
         institutions). Use `bankCode` values here for `resolve-account` and
-        `POST /cngn/payouts`. Requires `transfers:read`.
+        `POST /cngn/payouts`. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4111,7 +4111,7 @@ paths:
         Resolves the account holder name for a Nigerian bank account via
         name enquiry (`verify-account`), keyed by a `bankCode` from
         `GET /cngn/banks`. Returns `422` if the account cannot be verified or
-        the bank is unsupported. Requires `transfers:read`.
+        the bank is unsupported. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4148,7 +4148,7 @@ paths:
       summary: List cNGN user offramps
       description: |
         User cNGN → NGN bank offramps (not `/v1/offramps` local fiat).
-        Optionally filter by `customerId`. Requires `transfers:read`.
+        Optionally filter by `customerId`. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4162,7 +4162,7 @@ paths:
       summary: Create cNGN user offramp
       description: |
         Offramps cNGN from the user Smart Wallet to a Nigerian bank (`/cngnofframp`).
-        `amount` is in Naira. Requires `transfers:write` and `Idempotency-Key`.
+        `amount` is in Naira. Requires `api:write` and `Idempotency-Key`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4205,7 +4205,7 @@ paths:
     get:
       operationId: getRailsOfframp
       summary: Get cNGN user offramp
-      description: Requires `transfers:read`. Refreshes status on read by default.
+      description: Requires `api:read`. Refreshes status on read by default.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4232,7 +4232,7 @@ paths:
     get:
       operationId: listRailsOnramps
       summary: List cNGN temporary VA onramps
-      description: Optionally filter by `customerId`. Requires `transfers:read`.
+      description: Optionally filter by `customerId`. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4247,7 +4247,7 @@ paths:
       description: |
         Creates a temporary virtual account for a fixed NGN amount (~30 min TTL).
         Third-party deposits are accepted. Default `sweepToOfframp=true` moves minted
-        tokens to the customer's permanent Smart Wallet. Requires `transfers:write`.
+        tokens to the customer's permanent Smart Wallet. Requires `api:write`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4292,7 +4292,7 @@ paths:
     get:
       operationId: getRailsOnramp
       summary: Get cNGN temporary VA onramp
-      description: Requires `transfers:read`. Refreshes status on read by default. Response includes live `sweep` (temp vs main wallet balances / consolidate eligibility).
+      description: Requires `api:read`. Refreshes status on read by default. Response includes live `sweep` (temp vs main wallet balances / consolidate eligibility).
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4322,7 +4322,7 @@ paths:
       description: |
         When auto-sweep stalls after a temporary VA onramp, withdraws
         remaining cNGN from the generated temporary wallet into the customer's
-        linked permanent Smart Wallet. Requires `transfers:write`.
+        linked permanent Smart Wallet. Requires `api:write`.
 
         Success is not inferred from a mined hash alone: RemitFlex
         re-reads the temporary wallet balance and prefers on-chain Transfer
@@ -4353,7 +4353,7 @@ paths:
       summary: List cNGN deposits
       description: |
         Returns locally persisted cNGN deposit records (permanent VA credits).
-        Optionally filter by `customerId`. Requires `transfers:read`.
+        Optionally filter by `customerId`. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4367,7 +4367,7 @@ paths:
     get:
       operationId: getCngnDeposit
       summary: Get a cNGN deposit
-      description: Returns a locally persisted cNGN deposit record. Requires `transfers:read`.
+      description: Returns a locally persisted cNGN deposit record. Requires `api:read`.
       tags: [cNGN]
       security:
         - ApiKeyAuth: []
@@ -4389,7 +4389,7 @@ paths:
     get:
       operationId: listWebhookEventTypes
       summary: List webhook event types
-      description: Requires `webhooks:read` (or dashboard JWT).
+      description: Requires `api:read` (or dashboard JWT).
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4401,7 +4401,7 @@ paths:
     get:
       operationId: listWebhookEndpoints
       summary: List webhook endpoints
-      description: Requires `webhooks:read` (or dashboard JWT).
+      description: Requires `api:read` (or dashboard JWT).
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4412,7 +4412,7 @@ paths:
       operationId: createWebhookEndpoint
       summary: Create webhook endpoint
       description: |
-        Requires `webhooks:write` (or dashboard JWT). Returns `secret` (`whsec_…`) once.
+        Requires `api:write` (or dashboard JWT). Returns `secret` (`whsec_…`) once.
         URL must be HTTPS and must not resolve to a private IP.
       tags: [Webhooks]
       security:
@@ -4471,7 +4471,7 @@ paths:
     patch:
       operationId: updateWebhookEndpoint
       summary: Update webhook endpoint
-      description: Update url, events, description, and/or enabled. Requires `webhooks:write`.
+      description: Update url, events, description, and/or enabled. Requires `api:write`.
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4512,7 +4512,7 @@ paths:
     delete:
       operationId: revokeWebhookEndpoint
       summary: Revoke webhook endpoint
-      description: Soft-revoke (sets revokedAt). Requires `webhooks:write`.
+      description: Soft-revoke (sets revokedAt). Requires `api:write`.
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4535,7 +4535,7 @@ paths:
     post:
       operationId: rotateWebhookSecret
       summary: Rotate webhook signing secret
-      description: Returns a new `secret` once. Requires `webhooks:write`.
+      description: Returns a new `secret` once. Requires `api:write`.
       tags: [Webhooks]
       security:
         - ApiKeyAuth: []
@@ -4588,7 +4588,7 @@ paths:
       summary: Queue a test ping event
       description: |
         Enqueues `webhook.test` to **this endpoint only**, bypassing the event allowlist.
-        Requires `webhooks:write`. Returns 502 if the delivery job could not be queued
+        Requires `api:write`. Returns 502 if the delivery job could not be queued
         (e.g. Redis/worker enqueue failure).
       tags: [Webhooks]
       security:
@@ -4711,7 +4711,7 @@ paths:
       operationId: simulateSandboxProvider
       summary: Force-complete a simulated provider request
       description: |
-        Test environment only. Immediately completes a pending simulated Relay, PayCrest, or StRails request. Requires a write scope (`transfers:write`, `collections:write`, `offramps:write`, or `onramps:write`).
+        Test environment only. Immediately completes a pending simulated Relay, PayCrest, or StRails request. Requires a write scope (`api:write`, `api:write`, `api:write`, or `api:write`).
       tags: [Sandbox]
       security:
         - ApiKeyAuth: []

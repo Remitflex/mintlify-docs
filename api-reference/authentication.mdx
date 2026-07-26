@@ -51,20 +51,12 @@ r = requests.get(
 
 1. Log in at [dashboard.remitflex.io](https://dashboard.remitflex.io).
 2. Go to **Settings → API Keys**.
-3. Create a key with the scopes your integration needs.
+3. Create a key with **full access** (`api:read` + `api:write`) unless you only need a read-only reporter.
 4. Copy the raw key immediately — it cannot be retrieved later.
 
 ## Scopes
 
-API keys use fine-grained scopes. Each endpoint in this reference requires specific scopes when called with an API key.
-
-| Scope | Access |
-|-------|--------|
-| `fx:read` | Fiat sell rate quotes |
-| `transfers:read` | Read transactions, customers |
-| `transfers:write` | Create customers |
-| `collections:read` | Read payment routes and payment links |
-| `collections:write` | Create and manage payment routes and payment links |
+Secret API keys use **`api:read`** and/or **`api:write`** (write implies read). Publishable keys (`rmf_pk_*`) are limited to payment-link embed reads (`collections:read`).
 
 A `403` response with `Missing required scopes: ...` means the key is valid but lacks permission. Create a new key with the required scopes.
 
@@ -83,7 +75,7 @@ A `403` response with `Missing required scopes: ...` means the key is valid but 
     ```json
     {
       "status": "error",
-      "message": "Missing required scopes: transfers:write"
+      "message": "Missing required scopes: api:write"
     }
     ```
   </Tab>
