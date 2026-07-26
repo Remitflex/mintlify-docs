@@ -129,6 +129,7 @@
             "group": "Customers",
             "pages": [
               "GET /customers",
+              "GET /customers/{customerId}",
               "POST /customers"
             ]
           },
@@ -148,10 +149,10 @@
               "GET /payment-routes",
               "POST /payment-routes",
               "GET /payment-routes/deposits",
-              "GET /payment-routes/{id}",
-              "GET /payment-routes/{id}/deposits",
-              "POST /payment-routes/{id}/deposits/sync",
-              "DELETE /payment-routes/{id}"
+              "GET /payment-routes/{paymentRouteId}",
+              "GET /payment-routes/{paymentRouteId}/deposits",
+              "POST /payment-routes/{paymentRouteId}/deposits/sync",
+              "DELETE /payment-routes/{paymentRouteId}"
             ]
           },
           {
@@ -159,16 +160,16 @@
             "pages": [
               "GET /collections",
               "POST /collections",
-              "GET /collections/{id}",
-              "PATCH /collections/{id}",
-              "POST /collections/{id}/sync",
-              "POST /collections/{id}/cancel",
-              "POST /collections/{id}/logo",
-              "PATCH /collections/{id}/embed-config",
-              "GET /pay/{id}/embed-config",
-              "GET /pay/{id}",
-              "GET /pay/{id}/logo",
-              "POST /pay/{id}/quote"
+              "GET /collections/{collectionId}",
+              "PATCH /collections/{collectionId}",
+              "POST /collections/{collectionId}/sync",
+              "POST /collections/{collectionId}/cancel",
+              "POST /collections/{collectionId}/logo",
+              "PATCH /collections/{collectionId}/embed-config",
+              "GET /pay/{collectionId}/embed-config",
+              "GET /pay/{collectionId}",
+              "GET /pay/{collectionId}/logo",
+              "POST /pay/{collectionId}/quote"
             ]
           },
           {
@@ -217,33 +218,33 @@
             "pages": [
               "GET /swaps",
               "POST /swaps",
-              "GET /swaps/{id}",
-              "POST /swaps/{id}/cancel"
+              "GET /swaps/{swapId}",
+              "POST /swaps/{swapId}/cancel"
             ]
           },
           {
             "group": "cNGN",
             "pages": [
-              "POST /cngn/customers/{id}/enable",
-              "GET /cngn/customers/{id}/wallets",
-              "GET /cngn/customers/{id}/history",
+              "POST /cngn/customers/{customerId}/enable",
+              "GET /cngn/customers/{customerId}/wallets",
+              "GET /cngn/customers/{customerId}/history",
               "GET /cngn/converts",
               "POST /cngn/converts",
-              "GET /cngn/converts/{id}",
+              "GET /cngn/converts/{convertId}",
               "GET /cngn/withdrawals",
               "POST /cngn/withdrawals",
-              "GET /cngn/withdrawals/{id}",
+              "GET /cngn/withdrawals/{withdrawalId}",
               "GET /cngn/banks",
               "POST /cngn/payouts/resolve-account",
               "GET /cngn/payouts",
               "POST /cngn/payouts",
-              "GET /cngn/payouts/{id}",
+              "GET /cngn/payouts/{payoutId}",
               "GET /cngn/payins",
               "POST /cngn/payins",
-              "GET /cngn/payins/{id}",
-              "POST /cngn/payins/{id}/consolidate",
+              "GET /cngn/payins/{payinId}",
+              "POST /cngn/payins/{payinId}/consolidate",
               "GET /cngn/deposits",
-              "GET /cngn/deposits/{id}"
+              "GET /cngn/deposits/{depositId}"
             ]
           },
           {
@@ -258,19 +259,19 @@
               "GET /webhooks/event-types",
               "GET /webhooks",
               "POST /webhooks",
-              "GET /webhooks/{id}",
-              "PATCH /webhooks/{id}",
-              "DELETE /webhooks/{id}",
-              "POST /webhooks/{id}/rotate-secret",
-              "GET /webhooks/{id}/deliveries",
-              "POST /webhooks/{id}/test"
+              "GET /webhooks/{webhookEndpointId}",
+              "PATCH /webhooks/{webhookEndpointId}",
+              "DELETE /webhooks/{webhookEndpointId}",
+              "POST /webhooks/{webhookEndpointId}/rotate-secret",
+              "GET /webhooks/{webhookEndpointId}/deliveries",
+              "POST /webhooks/{webhookEndpointId}/test"
             ]
           },
           {
             "group": "Notifications",
             "pages": [
               "GET /notifications",
-              "POST /notifications/{id}/read",
+              "POST /notifications/{notificationId}/read",
               "POST /notifications/read-all"
             ]
           }

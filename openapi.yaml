@@ -2585,6 +2585,38 @@ paths:
         "201":
           $ref: "#/components/responses/Customer"
 
+  /customers/{customerId}:
+    get:
+      operationId: getCustomer
+      summary: Get customer
+      description: |
+        Returns a single customer by RemitFlex customer UUID.
+        Requires `transfers:read` scope. Includes the `cngn` block when enablement
+        has been started or completed.
+      tags: [Customers]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: RemitFlex customer UUID (`id` from `POST /customers` or `GET /customers`). Not a wallet address or provider user id.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          $ref: "#/components/responses/Customer"
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    status: error
+                    message: Customer not found
+
   /org/settings:
     get:
       operationId: getOrgSettings
