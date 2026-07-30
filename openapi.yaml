@@ -3809,7 +3809,7 @@ paths:
       operationId: getCngnCustomerWallets
       summary: Get cNGN wallets
       description: |
-        Cached wallet list plus **live** Smart Wallet token balances.
+        Live balances for the customer's primary Base Smart Wallet.
         Customer must have cNGN enabled. Requires `api:read`.
       tags: [cNGN]
       security:
@@ -3824,7 +3824,7 @@ paths:
             format: uuid
       responses:
         "200":
-          description: Wallets fetched
+          description: Primary wallet fetched
           content:
             application/json:
               schema:
@@ -3841,22 +3841,40 @@ paths:
                       customerId:
                         type: string
                         format: uuid
-                      wallets:
-                        type: array
-                        items:
-                          type: object
-                      count:
-                        type: integer
                       primary:
                         type: object
                         nullable: true
-                      source:
-                        type: string
-                        example: database
-                      balancesLive:
-                        type: boolean
-                      note:
-                        type: string
+                        properties:
+                          walletAddress:
+                            type: string
+                          status:
+                            type: string
+                          blockchain:
+                            type: string
+                          owner:
+                            type: string
+                            nullable: true
+                          balances:
+                            type: object
+                            properties:
+                              CNGN:
+                                type: object
+                                properties:
+                                  balance:
+                                    type: string
+                                    nullable: true
+                              USDC:
+                                type: object
+                                properties:
+                                  balance:
+                                    type: string
+                                    nullable: true
+                              USDT:
+                                type: object
+                                properties:
+                                  balance:
+                                    type: string
+                                    nullable: true
 
   /cngn/customers/{customerId}/history:
     get:

@@ -51,7 +51,7 @@ Once enabled:
 
 | Need | Endpoint |
 |------|----------|
-| Live wallet balances + cached wallet list | `GET /v1/cngn/customers/{customerId}/wallets` |
+| Live primary Smart Wallet balances | `GET /v1/cngn/customers/{customerId}/wallets` |
 | Cached deposit/payout history | `GET /v1/cngn/customers/{customerId}/history` |
 
 **Required scopes:** `api:read`, `api:write`
@@ -217,7 +217,7 @@ All of the above appear in [Transactions](/products/transactions) (`cngn_deposit
 
 | Need | Use |
 |------|-----|
-| Live wallet balances | `GET /v1/cngn/customers/{customerId}/wallets` (or dashboard **Refresh**). Primary balances are live; the wallet list is a retained cache — RemitFlex does not drop addresses just because StRails stopped listing them. |
+| Live wallet balances | `GET /v1/cngn/customers/{customerId}/wallets` (or dashboard **Refresh**) — returns the primary Base Smart Wallet with live CNGN/USDC/USDT balances |
 | Money history (source of truth) | `GET /v1/transactions?customerId=` and the cNGN list endpoints below with optional `?customerId=` |
 
 All cNGN money lists accept optional `customerId` — RemitFlex is customer-first; filter when reconciling a single counterparty:
